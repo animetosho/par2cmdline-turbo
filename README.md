@@ -93,11 +93,11 @@ Pre-built binaries for common systems are available on the [releases page](https
 
 See [original README](https://github.com/Parchive/par2cmdline/blob/master/README.md#compiling-par2cmdline) for build instructions.
 
-# Issues & Bugs
+# Issues, Bugs & PRs
 
 If you have an issue, please test with the original par2cmdline. If the issue is present there, please report it to the par2cmdline repository. Only report issues specific to par2cmdline-turbo here.
 
-Similarly, questions should also be directed to the par2cmdline repository, unless it *specifically* relates to par2cmdline-turbo.
+Similarly, questions and pull requests should also be directed to the par2cmdline repository, unless it *specifically* relates to par2cmdline-turbo.
 
 # Other Resources
 
