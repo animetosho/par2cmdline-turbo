@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Get release
         id: get_release
-        uses: bruceadams/get-release@v1.2.3
+        uses: bruceadams/get-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - run: msbuild -property:PlatformToolset=ClangCL -property:Configuration=Release -property:Platform=${{ matrix.platform }} par2cmdline.sln
@@ -73,7 +73,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Get release
         id: get_release
-        uses: bruceadams/get-release@v1.2.3
+        uses: bruceadams/get-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - uses: junelife/gha-ubuntu-cross@v6
@@ -118,7 +118,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Get release
         id: get_release
-        uses: bruceadams/get-release@v1.2.3
+        uses: bruceadams/get-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - run: aclocal && automake --warnings=all --add-missing && autoconf --warnings=all
@@ -154,7 +154,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Get release
         id: get_release
-        uses: bruceadams/get-release@v1.2.3
+        uses: bruceadams/get-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - run: aclocal && automake --warnings=all --add-missing && autoconf --warnings=all
