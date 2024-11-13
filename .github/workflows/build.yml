@@ -103,7 +103,7 @@ jobs:
 
   build-mac-x64:
     name: Build x64 MacOS binary
-    runs-on: macos-latest
+    runs-on: macos-13
     steps:
       - uses: ConorMacBride/install-package@v1
         with:
