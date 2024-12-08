@@ -1,6 +1,7 @@
 #include "gf16_neon_common.h"
 
-#if defined(_AVAILABLE)
+#if defined(_AVAILABLE) && !defined(__GF16_CLMUL_NEON_H)
+#define __GF16_CLMUL_NEON_H 1
 
 // `vaddq_p8` and co seems to be missing from some compilers (like GCC), so define our own variant
 static HEDLEY_ALWAYS_INLINE poly8x16_t veorq_p8(poly8x16_t a, poly8x16_t b) {
@@ -48,10 +49,10 @@ static HEDLEY_ALWAYS_INLINE uint8x16_t eor3q_u8(uint8x16_t a, uint8x16_t b, uint
 }
 #endif
 
-static HEDLEY_ALWAYS_INLINE void gf16_clmul_neon_reduction(poly16x8_t* low1, poly16x8_t low2, poly16x8_t mid1, poly16x8_t mid2, poly16x8_t* high1, poly16x8_t high2) {
+static HEDLEY_ALWAYS_INLINE void gf16_clmul_neon_reduction(poly16x8_t* low1, poly16x8_t* low2, poly16x8_t mid1, poly16x8_t mid2, poly16x8_t* high1, poly16x8_t* high2) {
 	// put data in proper form
-	uint8x16x2_t hibytes = vuzpq_u8(vreinterpretq_u8_p16(*high1), vreinterpretq_u8_p16(high2));
-	uint8x16x2_t lobytes = vuzpq_u8(vreinterpretq_u8_p16(*low1), vreinterpretq_u8_p16(low2));
+	uint8x16x2_t hibytes = vuzpq_u8(vreinterpretq_u8_p16(*high1), vreinterpretq_u8_p16(*high2));
+	uint8x16x2_t lobytes = vuzpq_u8(vreinterpretq_u8_p16(*low1), vreinterpretq_u8_p16(*low2));
 	
 	// merge mid into high/low
 	uint8x16x2_t midbytes = vuzpq_u8(vreinterpretq_u8_p16(mid1), vreinterpretq_u8_p16(mid2));
@@ -62,38 +63,41 @@ static HEDLEY_ALWAYS_INLINE void gf16_clmul_neon_reduction(poly16x8_t* low1, pol
 	
 	// Barrett reduction
 	// first reduction coefficient is 0x1111a
-	// multiply hibytes by 0x11100
-	uint8x16_t highest_nibble = vshrq_n_u8(hibytes.val[1], 4);
+	// multiply hibytes by 0x11110
 	uint8x16_t th0 = vsriq_n_u8(vshlq_n_u8(hibytes.val[1], 4), hibytes.val[0], 4);
-	th0 = eor3q_u8(th0, hibytes.val[0], hibytes.val[1]);
-	uint8x16_t th1 = veorq_u8(hibytes.val[1], highest_nibble);
+	uint8x16_t th1 = veorq_u8(hibytes.val[1], vshrq_n_u8(hibytes.val[1], 4));
+	th0 = eor3q_u8(th0, th1, hibytes.val[0]);
 	
 	// subsequent polynomial multiplication doesn't need the low bits of th0 to be correct, so trim these now for a shorter dep chain
 	uint8x16_t th0_hi3 = vshrq_n_u8(th0, 5);
+#if defined(__aarch64__) && !defined(__ARM_FEATURE_SHA3)
+	// computes `th0_hi3 ^= th0_hi3 >> 2` in one op
+	th0_hi3 = vqtbl1q_u8(
+		vmakeq_u8(0,1,2,3,5,4,7,6, 0,0,0,0,0,0,0,0), th0_hi3
+	);
+#else
 	uint8x16_t th0_hi1 = vshrq_n_u8(th0_hi3, 2); // or is `vshrq_n_u8(th0, 7)` better?
+#endif
 	
 	// mul by 0x1a => we only care about upper byte
-#ifdef __aarch64__
-	th0 = veorq_u8(th0, vqtbl1q_u8(
-		vmakeq_u8(0,1,3,2,6,7,5,4,13,12,14,15,11,10,8,9),
-		highest_nibble
-	));
-#else
-	th0 = veorq_u8(th0, vshrq_n_u8(vreinterpretq_u8_p8(vmulq_p8(
-		vreinterpretq_p8_u8(highest_nibble),
-		vdupq_n_p8(0x1a)
-	)), 4));
-#endif
+	// note that as hibytes.val[1] can only contain 7 bits (due to 16b*16b->31b), multiplying by 0x18 also works
+	// the 0x10 part is handled above, so just need to shift in for the 0x8
+	th0 = veorq_u8(th0, vshrq_n_u8(hibytes.val[1], 5));
 	
 	// multiply by polynomial: 0x100b
 	poly8x16_t redL = vdupq_n_p8(0x0b);
-	hibytes.val[1] = veorq_u8(th0_hi3, th0_hi1);
-	hibytes.val[1] = vsliq_n_u8(hibytes.val[1], th0, 4);
+	hibytes.val[1] = vsliq_n_u8(th0_hi3, th0, 4);
 	th1 = vreinterpretq_u8_p8(vmulq_p8(vreinterpretq_p8_u8(th1), redL));
 	hibytes.val[0] = vreinterpretq_u8_p8(vmulq_p8(vreinterpretq_p8_u8(th0), redL));
 	
-	*low1 = vreinterpretq_p16_u8(veorq_u8(lobytes.val[0], hibytes.val[0]));
-	*high1 = vreinterpretq_p16_u8(eor3q_u8(hibytes.val[1], lobytes.val[1], th1));
+	*low1 = vreinterpretq_p16_u8(lobytes.val[0]);
+	*low2 = vreinterpretq_p16_u8(hibytes.val[0]);
+#if defined(__aarch64__) && !defined(__ARM_FEATURE_SHA3)
+	*high1 = vreinterpretq_p16_u8(veorq_u8(hibytes.val[1], th1));
+#else
+	*high1 = vreinterpretq_p16_u8(eor3q_u8(hibytes.val[1], th0_hi1, th1));
+#endif
+	*high2 = vreinterpretq_p16_u8(lobytes.val[1]);
 }
 
 #endif
