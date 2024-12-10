@@ -142,12 +142,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       # workaround issue with OpenSSL 3.0.2 on 22.04: https://github.com/tpoechtrager/osxcross/issues/349
-      # issue is fixed in 3.0.7, so grab 3.0.8 from Ubuntu 23.04
+      # issue is fixed in 3.0.7, so grab 3.0.13 from Ubuntu 24.04
       - run: |
-          echo 'deb http://archive.ubuntu.com/ubuntu/ lunar main' | sudo tee -a /etc/apt/sources.list.d/lunar.list >/dev/null
+          echo 'deb http://archive.ubuntu.com/ubuntu/ noble main' | sudo tee -a /etc/apt/sources.list.d/noble.list >/dev/null
           echo 'APT::Default-Release "jammy";' | sudo tee -a /etc/apt/apt.conf >/dev/null
           sudo apt update
-          sudo apt -t=lunar -y install openssl
+          sudo apt -t=noble -y install openssl
       - uses: mbround18/setup-osxcross@main  # OSXCROSS_TARGET unavailable in v1.1
         with:
           osx-version: "12.3"
