@@ -61,6 +61,10 @@ Some speed comparisons posted by others:
 * [PAR2 create](https://github.com/animetosho/par2cmdline-turbo/issues/4#issue-1640569835) (v0.9.0)
 * [PAR2 verification/repair](https://gist.github.com/thezoggy/3c243b712f0cc960fa4dd78ff1ab56e7) (multiple machines/OSes)
 
+## See Also
+
+nzbget.com maintains a [par2cmdline-turbo fork](https://github.com/nzbgetcom/par2cmdline-turbo) which incorporates a few Windows fixes to par2cmdline.
+
 # Relation with ParPar
 
 [ParPar](https://github.com/animetosho/ParPar) is a from-scratch PAR2 implementation, different from par2cmdline, but only focuses on PAR2 creation.
