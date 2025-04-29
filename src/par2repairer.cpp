@@ -1589,27 +1589,21 @@ bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
   // Remember which file we wanted to match
   Par2RepairerSourceFile *originalsourcefile = sourcefile;
 
-  matchtype = eNoMatch;
-
   string name;
   DiskFile::SplitRelativeFilename(diskfile->FileName(), basepath, name);
 
   // Is the file empty
-  if (diskfile->FileSize() == 0)
+  if (originalsourcefile != 0 && originalsourcefile->GetTargetExists())
+  {
+    // don't check size if target was found
+  }
+  else if (diskfile->FileSize() == 0)
   {
     // If the file is empty, then just return
     if (noiselevel > nlSilent)
     {
-      if (originalsourcefile != 0)
-      {
-        lock_guard<mutex> lock(output_lock);
-        sout << "Target: \"" << name << "\" - empty." << endl;
-      }
-      else
-      {
-        lock_guard<mutex> lock(output_lock);
-        sout << "File: \"" << name << "\" - empty." << endl;
-      }
+      lock_guard<mutex> lock(output_lock);
+      sout << "File: \"" << name << "\" - empty." << endl;
     }
     return true;
   }

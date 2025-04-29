@@ -203,6 +203,7 @@ char *strchr(), *strrchr();
 
 #include <ctype.h>
 #include <iomanip>
+#include <codecvt>
 
 #include <cassert>
 
@@ -246,6 +247,10 @@ using namespace std;
 #include "par1fileformat.h"
 #include "par1repairersourcefile.h"
 #include "par1repairer.h"
+
+#ifdef _WIN32
+#include "utf8.h"
+#endif
 
 // Heap checking
 #ifdef _MSC_VER

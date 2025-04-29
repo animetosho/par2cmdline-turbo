@@ -1,6 +1,6 @@
 .\" Manpage for par2
 .\" Contact ike.devolder@gmail.com for mistakes.
-.TH par2 1 "june 2017" "0.8.1" "Parity archive utils"
+.TH par2 1 "april 2025" "1.0.0" "Parity archive utils"
 .SH NAME
 par2 \- PAR 2.0 compatible file verification and repair tool.
 .SH SYNOPSIS
@@ -71,7 +71,7 @@ Uniform recovery file sizes
 .RB "Limit size of recovery files (don't use both " "\-u" " and " "\-l" ")"
 .TP
 .B \-n<n>
-.RB "Number of recovery files (don't use both " "\-n" " and " "\-l" ")"
+.RB "Number of recovery files (max 31) (don't use both " "\-n" " and " "\-l" ")"
 .TP
 .B \-m<n>
 Memory (in MB) to use
@@ -105,6 +105,34 @@ Set the basepath to use as reference for the datafiles
 .TP
 .B \-\-
 Treat all following arguments as filenames
+.SH EXITCODES
+.TP
+.B 0
+The process completed successfully
+.TP
+.B 1
+Repair is possible, there are sufficient recovery blocks
+.TP
+.B 2
+Repair is *NOT* possible, there are insufficient recovery blocks
+.TP
+.B 3
+The given combination of commandline flags is invalid
+.TP
+.B 4
+Insufficient critical data, probably your par files are corrupted
+.TP
+.B 5
+Repair was completed, but datafiles are still corrupted
+.TP
+.B 6
+Some file IO error while accessing it
+.TP
+.B 7
+An internal logic error occured
+.TP
+.B 8
+Out of memory or other memory error
 .SH EXAMPLES
 With PAR 2.0 you can create PAR2 recovery files for as few as 1 or as many as 32768 files. If you wanted to create PAR1 recovery files for a single file you are forced to split the file into multiple parts and RAR is frequently used for this purpose. You do NOT need to split files with PAR 2.0.
 
@@ -146,6 +174,54 @@ When creating PAR2 recovery files form multiple data files, you must specify the
   par2 create test.mpg.rar.par2 test.mpg.part*.rar
 
 The files filename "test.mpg.rar.par2" says what you want the par2 files to be called and "test.mpg.part*.rar" should select all of the RAR files.
+
+With "-R" you can also create recovery files for a multi layered tree structure.
+
+  .
+  ├── aaaa-test.data
+  ├── subdir1
+  │   └── test-0.data
+  ├── subdir2
+  │   ├── test-1.data
+  │   ├── test-2.data
+  │   ├── test-3.data
+  │   ├── test-4.data
+  │   ├── test-5.data
+  │   ├── test-6.data
+  │   ├── test-7.data
+  │   ├── test-8.data
+  │   └── test-9.data
+  └── test-a.data
+
+  par2 create -R recovery.par2 *
+
+Will result in:
+
+  .
+  ├── aaaa-test.data
+  ├── recovery.par2
+  ├── recovery.vol000+01.par2
+  ├── recovery.vol001+02.par2
+  ├── recovery.vol003+04.par2
+  ├── recovery.vol007+08.par2
+  ├── recovery.vol015+16.par2
+  ├── recovery.vol031+32.par2
+  ├── recovery.vol063+37.par2
+  ├── subdir1
+  │   └── test-0.data
+  ├── subdir2
+  │   ├── test-1.data
+  │   ├── test-2.data
+  │   ├── test-3.data
+  │   ├── test-4.data
+  │   ├── test-5.data
+  │   ├── test-6.data
+  │   ├── test-7.data
+  │   ├── test-8.data
+  │   └── test-9.data
+  └── test-a.data
+
+WARNING: Be wary of wildcard shell expansion. Once you pass in more than one unnamed argument the first one will be used as the par2 files name and not be covered by those.
 
 VERIFYING AND REPAIRING
 
