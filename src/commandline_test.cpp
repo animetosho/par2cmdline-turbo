@@ -1083,7 +1083,7 @@ int test10() {
 		    default_recoveryblockcount)) {
     return 1;
   }
-  if (test10_helper("par2 create -n42 foo.par2 input1.txt input2.txt",
+  if (test10_helper("par2 create -n31 foo.par2 input1.txt input2.txt",
 		    default_noiselevel,
 		    default_memorylimit,
 		    default_basepath,
@@ -1093,8 +1093,8 @@ int test10() {
 		    default_extrafiles,
 		    default_blocksize,
 		    default_firstblock,
-		    default_recoveryfilescheme,
-		    42,
+		    scUniform, // when recovery file number is set the scheme is uniform
+		    31,
 		    default_recoveryblockcount)) {
     return 1;
   }

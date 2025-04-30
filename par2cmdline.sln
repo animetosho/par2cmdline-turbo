@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26403.3
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "par2cmdline", "par2cmdline.vcxproj", "{D0A94F83-495E-4FB2-AC33-9A3EC2CC263B}"
 EndProject
@@ -15,6 +15,9 @@ Global
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
 		Release|ARM = Release|ARM
+		Debug|ARM64 = Debug|ARM64
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|ARM64 = Release|ARM64
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
@@ -74,5 +77,6 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {352E8732-F439-4D95-9788-47385BE96FD6}
+		SolutionGuid = {06E89BF8-F199-48B1-94CB-D7BB1B23DDD9}
 	EndGlobalSection
 EndGlobal

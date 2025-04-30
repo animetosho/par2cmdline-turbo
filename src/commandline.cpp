@@ -127,8 +127,9 @@ void CommandLine::usage(void)
     "  -f<n>    : First Recovery-Block-Number\n"
     "  -u       : Uniform recovery file sizes\n"
     "  -l       : Limit size of recovery files (don't use both -u and -l)\n"
-    "  -n<n>    : Number of recovery files (don't use both -n and -l)\n"
+    "  -n<n>    : Number of recovery files (max 31) (don't use both -n and -l)\n"
     "  -R       : Recurse into subdirectories\n"
+    "             (Be aware of wildcard shell expansion)\n"
     "\n";
   cout <<
     "Example:\n"
@@ -150,12 +151,12 @@ bool CommandLine::Parse(int argc, const char * const *argv)
     if (!ComputeBlockSize())
       return false;
 
-    u64 sourceblockcount = 0;
+    u32 sourceblockcount = 0;
     u64 largestfilesize = 0;
     for (vector<string>::const_iterator i=extrafiles.begin(); i!=extrafiles.end(); i++)
     {
       u64 filesize = filesize_cache.get(*i);
-      sourceblockcount += (filesize + blocksize-1) / blocksize;
+      sourceblockcount += (u32) ((filesize + blocksize-1) / blocksize);
       if (filesize > largestfilesize)
       {
 	largestfilesize = filesize;
@@ -561,7 +562,7 @@ bool CommandLine::ReadArgs(int argc, const char * const *argv)
               cerr << "Invalid option: " << argv[0] << endl;
               return false;
             }
-            if (recoveryfilescheme != scUnknown)
+            if (recoveryfilescheme != scUnknown && recoveryfilescheme != scUniform)
             {
               cerr << "Cannot specify two recovery file size schemes." << endl;
               return false;
@@ -633,6 +634,23 @@ bool CommandLine::ReadArgs(int argc, const char * const *argv)
               cerr << "Invalid recovery file count option: " << argv[0] << endl;
               return false;
             }
+
+            // cap the maximum number of recovery files
+            // because the number of recovery blocks will be
+            // (2 ^ recoveryfilecount) - 1
+            // the number 32 will overflow the u32 resulting in 1
+            if (recoveryfilecount > 31)
+            {
+              cerr << "Invalid recovery file count option: " << recoveryfilecount << endl;
+              cerr << "  the maximum allowed recovery file count is 31" << endl;
+
+              return false;
+            }
+
+            // When number of recovery files is used, set the recoveryfilescheme
+            // to uniform, since variable will not always be able to fill all
+            // the files
+            recoveryfilescheme = scUniform;
           }
           break;
 
@@ -1092,6 +1110,12 @@ bool CommandLine::CheckValuesAndSetDefaults() {
       parfilename = parfilename.substr(0, parfilename.length()-5);
     }
 
+    if (DiskFile::FileExists(parfilename + ".par2"))
+    {
+      cerr << "Par2 file already exists: " << parfilename << endl;
+      return false;
+    }
+
     // If neither block count not block size is specified
     if (blockcount == 0 && blocksize == 0)
     {
@@ -1250,7 +1274,7 @@ bool CommandLine::ComputeRecoveryBlockCount(u32 *recoveryblockcount,
     {
       u32 estimatedFileCount = 15;
       u64 overhead = estimatedFileCount * overhead_per_recovery_file;
-      u64 estimatedrecoveryblockcount;
+      u32 estimatedrecoveryblockcount;
       if (overhead > redundancysize)
       {
         estimatedrecoveryblockcount = 1;  // at least 1
@@ -1316,6 +1340,8 @@ bool CommandLine::ComputeRecoveryBlockCount(u32 *recoveryblockcount,
 bool CommandLine::SetParFilename(string filename)
 {
   bool result = false;
+
+#ifndef _WIN32
   string::size_type where;
 
   if ((where = filename.find_first_of('*')) != string::npos ||
@@ -1324,6 +1350,7 @@ bool CommandLine::SetParFilename(string filename)
     cerr << "par2 file must not have a wildcard in it." << endl;
     return result;
   }
+#endif
 
   // If we are verifying or repairing, the PAR2 file must
   // already exist
