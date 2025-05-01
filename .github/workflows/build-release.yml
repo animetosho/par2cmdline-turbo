@@ -3,7 +3,7 @@ name: par2cmdline release build
 on:
   push:
     branches:
-    - 'master'
+    - 'turbo'
 
 jobs:
   build-check-linux:
@@ -54,7 +54,7 @@ jobs:
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4
       with:
-        name: par2cmdline-linux-${{ matrix.arch }}
+        name: par2cmdline-turbo-linux-${{ matrix.arch }}
         path: |
           par2
         retention-days: 5
@@ -80,12 +80,12 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Build
-      run: msbuild -property:Configuration=Release -property:Platform=${{ matrix.platform }} par2cmdline.sln
+      run: msbuild -property:PlatformToolset=ClangCL -property:Configuration=Release -property:Platform=${{ matrix.platform }} par2cmdline.sln
 
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4
       with:
-        name: par2cmdline-win-${{ matrix.name }}
+        name: par2cmdline-turbo-win-${{ matrix.name }}
         path: |
           ${{ matrix.platform }}/Release/par2.exe
         retention-days: 5
@@ -107,8 +107,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: prepare
-      run: brew install automake
+    - uses: ConorMacBride/install-package@v1
+      with:
+        # LLVM 18 introduced incompatible change with stock libc++ [https://github.com/Homebrew/homebrew-core/issues/178435#issuecomment-2270106398]
+        brew: automake llvm@17
+      # force past "The `brew link` step did not complete successfully"
+      continue-on-error: true
+    - run: |
+        if [ -f "`brew --prefix llvm`/bin/clang" ]; then
+          echo "CC=`brew --prefix llvm`/bin/clang" >> $GITHUB_ENV
+          echo "CXX=`brew --prefix llvm`/bin/clang++" >> $GITHUB_ENV
+          echo "LDFLAGS=-L`brew --prefix llvm`/lib -Wl,-rpath,`brew --prefix llvm`/lib" >> $GITHUB_ENV
+          echo "CFLAGS=-I`brew --prefix llvm`/include" >> $GITHUB_ENV
+          echo "CXXFLAGS=-I`brew --prefix llvm`/include" >> $GITHUB_ENV
+        fi
 
     - name: automake
       run: ./automake.sh
@@ -119,10 +131,13 @@ jobs:
     - name: make
       run: make
 
+    - name: strip
+      run: strip par2
+
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4
       with:
-        name: par2cmdline-macos-${{ matrix.arch }}
+        name: par2cmdline-turbo-macos-${{ matrix.arch }}
         path: |
           par2
         retention-days: 5

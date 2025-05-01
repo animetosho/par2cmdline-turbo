@@ -16,4 +16,4 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Build
-      run: msbuild -property:Configuration=Release -property:Platform=x64 par2cmdline.sln
+      run: msbuild -property:PlatformToolset=ClangCL -property:Configuration=Release -property:Platform=x64 par2cmdline.sln
