@@ -23,7 +23,10 @@ dnl                                               -*- Autoconf -*-
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.62)
-AC_INIT([par2cmdline-turbo], [1.2.0])
+AC_INIT([par2cmdline], [1.0.0], [ike.devolder@gmail.com])
+AC_DEFINE([X_PACKAGE], ["par2cmdline-turbo"], [Forked package name])
+AC_DEFINE([X_VERSION], ["1.3.0"], [Forked package version])
+
 AC_CONFIG_SRCDIR([src/par2cmdline.cpp])
 
 AC_CANONICAL_HOST
