@@ -66,7 +66,33 @@ libparpar_gf16_a_SOURCES = \
 	parpar/gf16/gf16mul.cpp \
 	parpar/gf16/gf16_lookup.c \
 	parpar/gf16/gf_add_generic.c \
-	parpar/gf16/gf16_cksum_generic.c
+	parpar/gf16/gf16_cksum_generic.c \
+	parpar/gf16/controller.h \
+	parpar/gf16/controller_cpu.h \
+	parpar/gf16/controller_ocl.h \
+	parpar/gf16/gf_add.h \
+	parpar/gf16/gf_add_common.h \
+	parpar/gf16/gf16_affine.h \
+	parpar/gf16/gf16_checksum_generic.h \
+	parpar/gf16/gf16_cksum.h \
+	parpar/gf16/gf16_cksum_base.h \
+	parpar/gf16/gf16_clmul.h \
+	parpar/gf16/gf16_global.h \
+	parpar/gf16/gf16_lookup.h \
+	parpar/gf16/gf16_muladd_multi.h \
+	parpar/gf16/gf16_shuffle.h \
+	parpar/gf16/gf16_xor.h \
+	parpar/gf16/gf16_xor_common.h \
+	parpar/gf16/gf16_xor_common_funcs.h \
+	parpar/gf16/gf16mul.h \
+	parpar/gf16/gf16pmul.h \
+	parpar/gf16/gfmat_coeff.h \
+	parpar/gf16/gfmat_inv.h \
+	parpar/gf16/threadqueue.h \
+	parpar/src/cpuid.h \
+	parpar/src/hedley.h \
+	parpar/src/platform.h \
+	parpar/src/stdint.h
 libparpar_gf16_a_CFLAGS = $(CFLAGS_POSIX_SOURCE) -D_DARWIN_C_SOURCE -D_GNU_SOURCE -D_DEFAULT_SOURCE
 libparpar_gf16_a_CPPFLAGS = -Iparpar/gf16 -Iparpar/gf16/opencl-include $(AM_CPPFLAGS)
 libparpar_gf16_a_CXXFLAGS = 
@@ -75,11 +101,19 @@ libparpar_gf16_sse2_a_SOURCES = \
 	parpar/gf16/gf16_xor_sse2.c \
 	parpar/gf16/gf16_lookup_sse2.c \
 	parpar/gf16/gf_add_sse2.c \
-	parpar/gf16/gf16_cksum_sse2.c
+	parpar/gf16/gf16_cksum_sse2.c \
+	parpar/gf16/gf_add_x86.h \
+	parpar/gf16/gf16_bitdep_init_sse2.h \
+	parpar/gf16/gf16_checksum_x86.h \
+	parpar/gf16/gf16_cksum_x86.h \
+	parpar/gf16/x86_jit.h
 libparpar_gf16_sse2_a_CFLAGS = $(CFLAGS_SSE2) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_ssse3_a_SOURCES = \
-	parpar/gf16/gf16_shuffle_ssse3.c
+	parpar/gf16/gf16_shuffle_ssse3.c \
+	parpar/gf16/gf16_shuffle_x86.h \
+	parpar/gf16/gf16_shuffle_x86_common.h \
+	parpar/gf16/gf16_shuffle_x86_prepare.h
 libparpar_gf16_ssse3_a_CFLAGS = $(CFLAGS_SSSE3) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_avx_a_SOURCES = \
@@ -90,7 +124,9 @@ libparpar_gf16_avx2_a_SOURCES = \
 	parpar/gf16/gf16_xor_avx2.c \
 	parpar/gf16/gf16_shuffle_avx2.c \
 	parpar/gf16/gf_add_avx2.c \
-	parpar/gf16/gf16_cksum_avx2.c
+	parpar/gf16/gf16_cksum_avx2.c \
+	parpar/gf16/gf16_bitdep_init_avx2.h \
+	parpar/gf16/gf16_shuffle2x_x86.h
 libparpar_gf16_avx2_a_CFLAGS = $(CFLAGS_AVX2) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_avx512_a_SOURCES = \
@@ -105,7 +141,8 @@ libparpar_gf16_vbmi_a_SOURCES = \
 libparpar_gf16_vbmi_a_CFLAGS = $(CFLAGS_VBMI) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_gfni_a_SOURCES = \
-	parpar/gf16/gf16_affine_gfni.c
+	parpar/gf16/gf16_affine_gfni.c \
+	parpar/gf16/gf16_affine2x_x86.h
 libparpar_gf16_gfni_a_CFLAGS = $(CFLAGS_GFNI) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_gfni_avx2_a_SOURCES = \
@@ -119,10 +156,13 @@ libparpar_gf16_gfni_avx512_a_CFLAGS = $(CFLAGS_GFNI) $(CFLAGS_AVX512) $(libparpa
 
 libparpar_gf16_gfni_avx10_a_SOURCES = \
 	parpar/gf16/gf16_affine_avx10.c \
-	parpar/gf16/gf_add_avx10.c
+	parpar/gf16/gf_add_avx10.c \
+	parpar/gf16/gf16_affine_avx10.h
 libparpar_gf16_gfni_avx10_a_CFLAGS = $(CFLAGS_GFNI) $(CFLAGS_AVX10) $(libparpar_gf16_a_CFLAGS)
 
-libparpar_gf16_clmul_a_SOURCES = parpar/gf16/gf16pmul_sse.c
+libparpar_gf16_clmul_a_SOURCES = \
+	parpar/gf16/gf16pmul_sse.c \
+	parpar/gf16/gf16pmul_x86.h
 libparpar_gf16_clmul_a_CFLAGS = $(CFLAGS_PCLMUL) $(libparpar_gf16_a_CFLAGS)
 libparpar_gf16_avx2_clmul_a_SOURCES = parpar/gf16/gf16pmul_avx2.c
 libparpar_gf16_avx2_clmul_a_CFLAGS = $(CFLAGS_PCLMUL) $(CFLAGS_AVX2) $(libparpar_gf16_a_CFLAGS)
@@ -136,7 +176,11 @@ libparpar_gf16_neon_a_SOURCES = \
 	parpar/gf16/gf16_clmul_neon.c \
 	parpar/gf16/gf_add_neon.c \
 	parpar/gf16/gf16_cksum_neon.c \
-	parpar/gf16/gf16pmul_neon.c
+	parpar/gf16/gf16pmul_neon.c \
+	parpar/gf16/gf16_checksum_arm.h \
+	parpar/gf16/gf16_clmul_neon.h \
+	parpar/gf16/gf16_clmul_neon_base.h \
+	parpar/gf16/gf16_neon_common.h
 libparpar_gf16_neon_a_CFLAGS = $(CFLAGS_NEON) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_neonsha3_a_SOURCES = \
@@ -146,7 +190,10 @@ libparpar_gf16_neonsha3_a_CFLAGS = $(CFLAGS_NEONSHA3) $(libparpar_gf16_a_CFLAGS)
 libparpar_gf16_sve_a_SOURCES = \
 	parpar/gf16/gf16_shuffle128_sve.c \
 	parpar/gf16/gf_add_sve.c \
-	parpar/gf16/gf16_cksum_sve.c
+	parpar/gf16/gf16_cksum_sve.c \
+	parpar/gf16/gf16_checksum_sve.h \
+	parpar/gf16/gf16_shuffle128_sve_common.h \
+	parpar/gf16/gf16_sve_common.h
 libparpar_gf16_sve_a_CFLAGS = $(CFLAGS_SVE) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_sve2_a_SOURCES = \
@@ -155,18 +202,22 @@ libparpar_gf16_sve2_a_SOURCES = \
 	parpar/gf16/gf16_shuffle512_sve2.c \
 	parpar/gf16/gf16_clmul_sve2.c \
 	parpar/gf16/gf_add_sve2.c \
-	parpar/gf16/gf16pmul_sve2.c
+	parpar/gf16/gf16pmul_sve2.c \
+	parpar/gf16/gf16_clmul_sve2.h
 libparpar_gf16_sve2_a_CFLAGS = $(CFLAGS_SVE2) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_rvv_a_SOURCES = \
 	parpar/gf16/gf16_cksum_rvv.c \
 	parpar/gf16/gf16_shuffle128_rvv.c \
-	parpar/gf16/gf_add_rvv.c
+	parpar/gf16/gf_add_rvv.c \
+	parpar/gf16/gf16_checksum_rvv.h \
+	parpar/gf16/gf16_rvv_common.h
 libparpar_gf16_rvv_a_CFLAGS = $(CFLAGS_RV64V) $(CFLAGS_RV32V) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_rvv_zvbc_a_SOURCES = \
 	parpar/gf16/gf16_clmul_rvv.c \
-	parpar/gf16/gf16pmul_rvv.c
+	parpar/gf16/gf16pmul_rvv.c \
+	parpar/gf16/gf16_clmul_rvv.h
 libparpar_gf16_rvv_zvbc_a_CFLAGS = $(CFLAGS_RV64ZVBC) $(CFLAGS_RV32ZVBC) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_hasher_a_SOURCES = \
@@ -176,15 +227,55 @@ libparpar_hasher_a_SOURCES = \
 	parpar/hasher/hasher_input.cpp \
 	parpar/hasher/hasher_md5crc.cpp \
 	parpar/hasher/tables.cpp \
-	parpar/hasher/md5-final.c
+	parpar/hasher/md5-final.c \
+	parpar/hasher/crc_arm.h \
+	parpar/hasher/crc_slice4.h \
+	parpar/hasher/crc_zeropad.h \
+	parpar/hasher/hasher.h \
+	parpar/hasher/hasher_input.h \
+	parpar/hasher/hasher_input_base.h \
+	parpar/hasher/hasher_input_impl.h \
+	parpar/hasher/hasher_input_stub.h \
+	parpar/hasher/hasher_md5crc.h \
+	parpar/hasher/hasher_md5crc_base.h \
+	parpar/hasher/hasher_md5crc_impl.h \
+	parpar/hasher/hasher_md5crc_stub.h \
+	parpar/hasher/hasher_md5mb.h \
+	parpar/hasher/hasher_md5mb_base.h \
+	parpar/hasher/hasher_md5mb_impl.h \
+	parpar/hasher/hasher_md5mb_stub.h \
+	parpar/hasher/hasher_stub.h \
+	parpar/hasher/md5-arm-asm.h \
+	parpar/hasher/md5-arm64-asm.h \
+	parpar/hasher/md5-base.h \
+	parpar/hasher/md5-final.h \
+	parpar/hasher/md5-scalar.h \
+	parpar/hasher/md5-scalar-base.h \
+	parpar/hasher/md5-x86-asm.h \
+	parpar/hasher/md5x2-arm-asm.h \
+	parpar/hasher/md5mb-base.h \
+	parpar/hasher/md5mb-scalar.h \
+	parpar/hasher/md5x2-base.h \
+	parpar/hasher/md5x2-scalar.h \
+	parpar/hasher/md5x2-x86-asm.h \
+	parpar/src/cpuid.h \
+	parpar/src/hedley.h \
+	parpar/src/platform.h \
+	parpar/src/stdint.h
 # these two lines are needed for the right object files to be generated (for some reason)
 libparpar_hasher_a_CFLAGS = $(CFLAGS_POSIX_SOURCE)
 libparpar_hasher_a_CXXFLAGS = 
 
-libparpar_hasher_sse2_a_SOURCES = parpar/hasher/hasher_sse.cpp
+libparpar_hasher_sse2_a_SOURCES = \
+	parpar/hasher/hasher_sse.cpp \
+	parpar/hasher/md5mb-sse.h \
+	parpar/hasher/md5x2-sse.h \
+	parpar/hasher/md5x2-sse-asm.h
 libparpar_hasher_sse2_a_CXXFLAGS = $(CFLAGS_SSE2) $(libparpar_hasher_a_CXXFLAGS)
 
-libparpar_hasher_clmul_a_SOURCES = parpar/hasher/hasher_clmul.cpp
+libparpar_hasher_clmul_a_SOURCES = \
+	parpar/hasher/hasher_clmul.cpp \
+	parpar/hasher/crc_clmul.h
 libparpar_hasher_clmul_a_CXXFLAGS = $(CFLAGS_PCLMUL) $(libparpar_hasher_a_CXXFLAGS)
 
 libparpar_hasher_xop_a_SOURCES = parpar/hasher/hasher_xop.cpp
@@ -196,7 +287,10 @@ libparpar_hasher_bmi1_a_CXXFLAGS = $(CFLAGS_BMI1) $(libparpar_hasher_a_CXXFLAGS)
 libparpar_hasher_avx2_a_SOURCES = parpar/hasher/hasher_avx2.cpp
 libparpar_hasher_avx2_a_CXXFLAGS = $(CFLAGS_AVX2) $(libparpar_hasher_a_CXXFLAGS)
 
-libparpar_hasher_avx512_a_SOURCES = parpar/hasher/hasher_avx512.cpp
+libparpar_hasher_avx512_a_SOURCES = \
+	parpar/hasher/hasher_avx512.cpp \
+	parpar/hasher/md5-avx512.h \
+	parpar/hasher/md5-avx512-asm.h
 libparpar_hasher_avx512_a_CXXFLAGS = $(CFLAGS_AVX512F) $(libparpar_hasher_a_CXXFLAGS)
 
 libparpar_hasher_avx512vl_a_SOURCES = parpar/hasher/hasher_avx512vl.cpp
@@ -205,16 +299,24 @@ libparpar_hasher_avx512vl_a_CXXFLAGS = $(CFLAGS_AVX512_HASHER) $(CFLAGS_AVX10) $
 libparpar_hasher_armcrc_a_SOURCES = parpar/hasher/hasher_armcrc.cpp
 libparpar_hasher_armcrc_a_CXXFLAGS = $(CFLAGS_ARMCRC) $(CFLAGS_ARMCRC_FP) $(libparpar_hasher_a_CXXFLAGS)
 
-libparpar_hasher_neon_a_SOURCES = parpar/hasher/hasher_neon.cpp
+libparpar_hasher_neon_a_SOURCES = \
+	parpar/hasher/hasher_neon.cpp \
+	parpar/hasher/md5mb-neon.h \
+	parpar/hasher/md5x2-neon.h \
+	parpar/hasher/md5x2-neon-asm.h
 libparpar_hasher_neon_a_CXXFLAGS = $(CFLAGS_NEON) $(libparpar_hasher_a_CXXFLAGS)
 
 libparpar_hasher_neoncrc_a_SOURCES = parpar/hasher/hasher_neoncrc.cpp
 libparpar_hasher_neoncrc_a_CXXFLAGS = $(CFLAGS_NEON) $(CFLAGS_ARMCRC) $(libparpar_hasher_a_CXXFLAGS)
 
-libparpar_hasher_sve2_a_SOURCES = parpar/hasher/hasher_sve2.cpp
+libparpar_hasher_sve2_a_SOURCES = \
+	parpar/hasher/hasher_sve2.cpp \
+	parpar/hasher/md5mb-sve2.h
 libparpar_hasher_sve2_a_CXXFLAGS = $(CFLAGS_SVE2) $(libparpar_hasher_a_CXXFLAGS)
 
-libparpar_hasher_zbkc_a_SOURCES = parpar/hasher/hasher_rvzbc.cpp
+libparpar_hasher_zbkc_a_SOURCES = \
+	parpar/hasher/hasher_rvzbc.cpp \
+	parpar/hasher/crc_rvzbc.h
 libparpar_hasher_zbkc_a_CXXFLAGS = $(CFLAGS_RV64ZBKC) $(CFLAGS_RV32ZBKC) $(libparpar_hasher_a_CXXFLAGS)
 
 
