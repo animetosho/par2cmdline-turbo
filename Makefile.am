@@ -50,6 +50,7 @@ libpar2_a_SOURCES = src/crc.cpp src/crc.h \
 	src/verificationhashtable.cpp src/verificationhashtable.h \
 	src/verificationpacket.cpp src/verificationpacket.h \
 	src/libpar2.cpp src/libpar2.h src/libpar2internal.h \
+	src/foreach_parallel.h src/hasher.h \
 	src/utf8.cpp src/utf8.h
 libpar2_a_DEPENDENCIES = \
 	libparpar_gf16.a libparpar_gf16_sse2.a libparpar_gf16_ssse3.a libparpar_gf16_avx.a libparpar_gf16_avx2.a libparpar_gf16_avx512.a libparpar_gf16_vbmi.a libparpar_gf16_gfni.a libparpar_gf16_gfni_avx2.a libparpar_gf16_gfni_avx512.a libparpar_gf16_gfni_avx10.a libparpar_gf16_clmul.a libparpar_gf16_avx2_clmul.a libparpar_gf16_vpclmul.a libparpar_gf16_vpclgfni.a libparpar_gf16_neon.a libparpar_gf16_neonsha3.a libparpar_gf16_sve.a libparpar_gf16_sve2.a libparpar_gf16_rvv.a libparpar_gf16_rvv_zvbc.a \
