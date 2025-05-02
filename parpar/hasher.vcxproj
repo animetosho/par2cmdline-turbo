@@ -172,7 +172,6 @@
     <ClInclude Include="hasher\hasher_md5crc_base.h" />
     <ClInclude Include="hasher\hasher_md5crc_impl.h" />
     <ClInclude Include="hasher\hasher_md5crc_stub.h" />
-    <ClInclude Include="hasher\hasher_stub.h" />
     <ClInclude Include="hasher\md5-avx512.h" />
     <ClInclude Include="hasher\md5-base.h" />
     <ClInclude Include="hasher\md5-final.h" />

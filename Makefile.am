@@ -244,7 +244,6 @@ libparpar_hasher_a_SOURCES = \
 	parpar/hasher/hasher_md5mb_base.h \
 	parpar/hasher/hasher_md5mb_impl.h \
 	parpar/hasher/hasher_md5mb_stub.h \
-	parpar/hasher/hasher_stub.h \
 	parpar/hasher/md5-arm-asm.h \
 	parpar/hasher/md5-arm64-asm.h \
 	parpar/hasher/md5-base.h \
