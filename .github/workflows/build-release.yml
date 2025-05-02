@@ -114,12 +114,12 @@ jobs:
       # force past "The `brew link` step did not complete successfully"
       continue-on-error: true
     - run: |
-        if [ -f "`brew --prefix llvm`/bin/clang" ]; then
-          echo "CC=`brew --prefix llvm`/bin/clang" >> $GITHUB_ENV
-          echo "CXX=`brew --prefix llvm`/bin/clang++" >> $GITHUB_ENV
-          echo "LDFLAGS=-L`brew --prefix llvm`/lib -Wl,-rpath,`brew --prefix llvm`/lib" >> $GITHUB_ENV
-          echo "CFLAGS=-I`brew --prefix llvm`/include" >> $GITHUB_ENV
-          echo "CXXFLAGS=-I`brew --prefix llvm`/include" >> $GITHUB_ENV
+        if [ -f "`brew --prefix llvm@17`/bin/clang" ]; then
+          echo "CC=`brew --prefix llvm@17`/bin/clang" >> $GITHUB_ENV
+          echo "CXX=`brew --prefix llvm@17`/bin/clang++" >> $GITHUB_ENV
+          echo "LDFLAGS=-L`brew --prefix llvm@17`/lib -Wl,-rpath,`brew --prefix llvm@17`/lib" >> $GITHUB_ENV
+          echo "CFLAGS=-I`brew --prefix llvm@17`/include" >> $GITHUB_ENV
+          echo "CXXFLAGS=-I`brew --prefix llvm@17`/include" >> $GITHUB_ENV
         fi
 
     - name: automake
