@@ -107,20 +107,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: ConorMacBride/install-package@v1
-      with:
-        # LLVM 18 introduced incompatible change with stock libc++ [https://github.com/Homebrew/homebrew-core/issues/178435#issuecomment-2270106398]
-        brew: automake llvm@17
-      # force past "The `brew link` step did not complete successfully"
-      continue-on-error: true
-    - run: |
-        if [ -f "`brew --prefix llvm@17`/bin/clang" ]; then
-          echo "CC=`brew --prefix llvm@17`/bin/clang" >> $GITHUB_ENV
-          echo "CXX=`brew --prefix llvm@17`/bin/clang++" >> $GITHUB_ENV
-          echo "LDFLAGS=-L`brew --prefix llvm@17`/lib -Wl,-rpath,`brew --prefix llvm@17`/lib" >> $GITHUB_ENV
-          echo "CFLAGS=-I`brew --prefix llvm@17`/include" >> $GITHUB_ENV
-          echo "CXXFLAGS=-I`brew --prefix llvm@17`/include" >> $GITHUB_ENV
-        fi
+    - name: prepare
+      run: brew install automake
 
     - name: automake
       run: ./automake.sh
