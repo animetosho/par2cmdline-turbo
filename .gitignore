@@ -6,6 +6,7 @@
 par2
 libpar2.a
 *.o
+*.a
 .deps/
 par2.exe
 tests/*.exe
@@ -17,7 +18,6 @@ tests/runtest*
 
 # unit test binaries
 tests/*_test
-tests/.dirstamp
 
 # autotools output
 aclocal.m4
@@ -31,10 +31,10 @@ config.status
 configure
 stamp-h
 stamp-h1
-src/.dirstamp
 install-sh
 missing
 ar-lib
+.dirstamp
 
 # windows
 Release/
