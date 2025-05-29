@@ -5,6 +5,7 @@
 # compilation output
 par2
 libpar2.a
+libparpar*.a
 *.o
 .deps/
 par2.exe
@@ -32,6 +33,7 @@ configure
 stamp-h
 stamp-h1
 src/.dirstamp
+parpar/*/.dirstamp
 install-sh
 missing
 ar-lib
