@@ -94,6 +94,7 @@ public:
   // Rename the file
   bool Rename(void); // Pick a filename automatically
   bool Rename(string filename);
+  bool Rename(string filename, string stagingdirectory); // Rename to staging directory
 
   // Delete the file
   bool Delete(void);

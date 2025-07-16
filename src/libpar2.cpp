@@ -65,7 +65,8 @@ Result par2repair(std::ostream &sout,
 		  const bool dorepair,   // derived from operation
 		  const bool purgefiles,
 		  const bool skipdata,
-		  const u64 skipleaway
+		  const u64 skipleaway,
+		  const string &stagingdirectory
 		  )
 {
   Par2Repairer repairer(sout, serr, noiselevel);
@@ -79,7 +80,8 @@ Result par2repair(std::ostream &sout,
 				   dorepair,
 				   purgefiles,
 				   skipdata,
-				   skipleaway);
+				   skipleaway,
+				   stagingdirectory);
 
   return result;
 }
