@@ -1828,7 +1828,6 @@ bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
     if (progressline)
     {
       sout << endl;
-      progressline = false;
     }
 
     sout << "No data found between offset " << lastmatchoffset
