@@ -128,6 +128,7 @@ jobs:
     - name: configure
       run: ./configure ${{ matrix.configure_host }}
       env:
+        CFLAGS: ${{ matrix.xcxxflags }}
         CXXFLAGS: ${{ matrix.xcxxflags }}
 
     - name: make
