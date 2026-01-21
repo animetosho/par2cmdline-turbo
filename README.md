@@ -105,6 +105,6 @@ Similarly, questions and pull requests should also be directed to the par2cmdlin
 
 # Other Resources
 
-* [MultiPar](https://hp.vector.co.jp/authors/VA021385/)
+* [MultiPar](https://github.com/Yutaka-Sawada/MultiPar)
 * [Parchive](https://parchive.github.io/)
 * [Wikipedia](https://en.wikipedia.org/wiki/Parchive)
