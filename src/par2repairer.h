@@ -45,7 +45,8 @@ public:
 		 const bool dorepair,   // derived from operation
 		 const bool purgefiles,
 		 const bool skipdata,
-		 const u64 skipleaway
+		 const u64 skipleaway,
+		 const string &stagingdirectory
 		 );
 
 protected:
@@ -146,6 +147,10 @@ protected:
   bool RemoveBackupFiles(void);
   bool RemoveParFiles(void);
 
+  // Cleanup staged files
+  bool CleanupStagedFilesOnSuccess(void);
+  bool CleanupStagedFilesOnFailure(void);
+
   static u32                          GetFileThreads(void) {return filethreads;}
 
 protected:
@@ -159,6 +164,8 @@ protected:
   std::string               basepath;
 
   static u32 filethreads;      // Number of threads for file processing
+
+  string                    stagingdirectory;        // Directory for staging damaged files
 
   bool                      skipdata;                // Should we skip data whilst scanning
   u64                       skipleaway;              // The leaway +/- we should allow whilst scanning
@@ -177,6 +184,14 @@ protected:
   vector<Par2RepairerSourceFile*>      verifylist;   // Those source files that are being repaired
   vector<DiskFile*>                    backuplist;   // Those source files backups
   list<string>                         par2list;     // list of par2 files
+
+  // Track staged files for cleanup
+  struct StagedFile {
+    string original_path;    // Original file path
+    string staged_path;      // Path in staging directory
+    string original_name;    // Original filename without path
+  };
+  vector<StagedFile>                   stagedfiles;  // Files moved to staging directory
 
   u64                       blocksize;               // The block size.
   u64                       chunksize;               // How much of a block can be processed.

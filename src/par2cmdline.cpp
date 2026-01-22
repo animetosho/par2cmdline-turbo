@@ -123,7 +123,8 @@ int main(int argc, char* argv[])
 				  commandline->GetOperation() == CommandLine::opRepair,
 				  commandline->GetPurgeFiles(),
 				  commandline->GetSkipData(),
-				  commandline->GetSkipLeaway());
+				  commandline->GetSkipLeaway(),
+				  commandline->GetStagingDirectory());
               break;
 	    default:
               break;

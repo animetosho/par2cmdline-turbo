@@ -117,6 +117,7 @@ void CommandLine::usage(void)
     "             when no recovery is needed\n"
     "  -N       : Data skipping (find badly mispositioned data blocks)\n"
     "  -S<n>    : Skip leaway (distance +/- from expected block position)\n"
+    "  -D<path> : Staging directory for damaged files (default: same directory)\n"
     "Options: (create)\n"
     "  -a<file> : Set the main PAR2 archive name\n"
     "  -b<n>    : Set the Block-Count\n"
@@ -806,6 +807,27 @@ bool CommandLine::ReadArgs(int argc, const char * const *argv)
             else
             {
               basepath = DiskFile::GetCanonicalPathname(str.substr(2));
+            }
+          }
+          break;
+
+        case 'D': // Set the staging directory for damaged files
+          {
+            if (operation != opRepair && operation != opVerify)
+            {
+              cerr << "Cannot specify staging directory unless repairing or verifying." << endl;
+              return false;
+            }
+            string str = argv[0];
+            if (str == "-D")
+            {
+              stagingdirectory = DiskFile::GetCanonicalPathname(argv[1]);
+              argc--;
+              argv++;
+            }
+            else
+            {
+              stagingdirectory = DiskFile::GetCanonicalPathname(str.substr(2));
             }
           }
           break;

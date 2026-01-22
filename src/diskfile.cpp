@@ -987,6 +987,42 @@ bool DiskFile::Rename(void)
   return Rename(newname);
 }
 
+bool DiskFile::Rename(string filename, string stagingdirectory)
+{
+  // Extract the original filename without path
+  string path, name;
+  SplitFilename(this->filename, path, name);
+  
+  // Ensure staging directory ends with path separator
+  if (!stagingdirectory.empty() && stagingdirectory[stagingdirectory.length()-1] != '/' && stagingdirectory[stagingdirectory.length()-1] != '\\')
+  {
+    stagingdirectory += PATHSEP;
+  }
+  
+  // Create the new filename in the staging directory
+  char newname[_MAX_PATH+1];
+  u32 index = 0;
+  struct stat st;
+
+  do
+  {
+    int length = snprintf(newname, _MAX_PATH, "%s%s.%u", stagingdirectory.c_str(), name.c_str(), (unsigned int) ++index);
+    if (length < 0)
+    {
+      *serr << this->filename << " cannot be renamed." << endl;
+      return false;
+    }
+    else if (length > _MAX_PATH)
+    {
+      *serr << this->filename << " pathlength is more than " << _MAX_PATH << "." << endl;
+      return false;
+    }
+    newname[length] = 0;
+  } while (stat(newname, &st) == 0);
+
+  return Rename(newname);
+}
+
 #ifdef _WIN32
 string DiskFile::ErrorMessage(DWORD error)
 {

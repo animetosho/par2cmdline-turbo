@@ -21,6 +21,8 @@
 #include "libpar2internal.h"
 #include "foreach_parallel.h"
 
+#include <cstdio>  // for remove()
+
 #ifdef _MSC_VER
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -92,6 +94,9 @@ Par2Repairer::Par2Repairer(std::ostream &sout, std::ostream &serr, const NoiseLe
   mttotalextrasize = 0;
   mttotalprogress.store(0, memory_order_relaxed);
   mtprocessingextrafiles = false;
+  
+  // Initialize staged files tracking
+  stagedfiles.clear();
 }
 
 Par2Repairer::~Par2Repairer(void)
@@ -131,7 +136,8 @@ Result Par2Repairer::Process(
 			     const bool dorepair,   // derived from operation
 			     const bool purgefiles,
 			     const bool _skipdata,
-			     const u64 _skipleaway
+			     const u64 _skipleaway,
+			     const string &_stagingdirectory
 			     )
 {
   filethreads = _filethreads;
@@ -144,6 +150,7 @@ Result Par2Repairer::Process(
 
   // Get filenames from the command line
   basepath = _basepath;
+  stagingdirectory = _stagingdirectory;
   std::vector<string> extrafiles = _extrafiles;
 
   // Determine the searchpath from the location of the main PAR2 file
@@ -243,6 +250,8 @@ Result Par2Repairer::Process(
         {
           // Delete all of the partly reconstructed files
           DeleteIncompleteTargetFiles();
+          // Cleanup staged files on failure
+          CleanupStagedFilesOnFailure();
           return eFileIOError;
         }
 
@@ -254,6 +263,8 @@ Result Par2Repairer::Process(
         {
           // Delete all of the partly reconstructed files
           DeleteIncompleteTargetFiles();
+          // Cleanup staged files on failure
+          CleanupStagedFilesOnFailure();
           return eMemoryError;
         }
 
@@ -261,6 +272,8 @@ Result Par2Repairer::Process(
         if (!parpar.init(chunksize, {{&parparcpu, 0, (size_t)chunksize}}))
         {
           DeleteIncompleteTargetFiles();
+          // Cleanup staged files on failure
+          CleanupStagedFilesOnFailure();
           return eLogicError;
         }
         if (nthreads != 0)
@@ -274,6 +287,8 @@ Result Par2Repairer::Process(
         if (!parparcpu.init(GF16_AUTO, inputbatch) || !parpar.setRecoverySlices(missingblockcount))
         {
           DeleteIncompleteTargetFiles();
+          // Cleanup staged files on failure
+          CleanupStagedFilesOnFailure();
           return eMemoryError;
         }
 
@@ -301,6 +316,8 @@ Result Par2Repairer::Process(
           if (!parpar.setCurrentSliceSize(blocklength))
           {
             DeleteIncompleteTargetFiles();
+            // Cleanup staged files on failure
+            CleanupStagedFilesOnFailure();
             return eMemoryError;
           }
 
@@ -309,6 +326,8 @@ Result Par2Repairer::Process(
           {
             // Delete all of the partly reconstructed files
             DeleteIncompleteTargetFiles();
+            // Cleanup staged files on failure
+            CleanupStagedFilesOnFailure();
             return eFileIOError;
           }
 
@@ -324,6 +343,8 @@ Result Par2Repairer::Process(
         {
           // Delete all of the partly reconstructed files
           DeleteIncompleteTargetFiles();
+          // Cleanup staged files on failure
+          CleanupStagedFilesOnFailure();
           return eFileIOError;
         }
       }
@@ -332,12 +353,16 @@ Result Par2Repairer::Process(
       if (completefilecount<mainpacket->RecoverableFileCount())
       {
         serr << "Repair Failed." << endl;
+        // Cleanup staged files on failure
+        CleanupStagedFilesOnFailure();
         return eRepairFailed;
       }
       else
       {
         if (noiselevel > nlSilent)
           sout << endl << "Repair complete." << endl;
+        // Cleanup staged files on success
+        CleanupStagedFilesOnSuccess();
       }
     }
     else
@@ -2192,7 +2217,34 @@ bool Par2Repairer::RenameTargetFiles(void)
       // Rename it
       diskFileMap.Remove(targetfile);
 
-      if (!targetfile->Rename())
+      // Use staging directory if available, otherwise use default behavior
+      bool rename_success;
+      if (!stagingdirectory.empty())
+      {
+        // Track the original file info before renaming
+        StagedFile staged_file;
+        staged_file.original_path = targetfile->FileName();
+        
+        // Extract original filename without path
+        string path, name;
+        DiskFile::SplitFilename(staged_file.original_path, path, name);
+        staged_file.original_name = name;
+        
+        rename_success = targetfile->Rename("", stagingdirectory);
+        
+        if (rename_success)
+        {
+          // Track the staged file for cleanup
+          staged_file.staged_path = targetfile->FileName();
+          stagedfiles.push_back(staged_file);
+        }
+      }
+      else
+      {
+        rename_success = targetfile->Rename();
+      }
+
+      if (!rename_success)
         return false;
 
       backuplist.push_back(targetfile);
@@ -2858,4 +2910,98 @@ bool Par2Repairer::RemoveParFiles(void)
   }
 
   return true;
+}
+
+// Cleanup staged files on successful repair
+bool Par2Repairer::CleanupStagedFilesOnSuccess(void)
+{
+  if (stagingdirectory.empty() || stagedfiles.empty())
+    return true;
+
+  if (noiselevel > nlSilent)
+    sout << endl << "Cleaning up staged files..." << endl;
+
+  if (noiselevel >= nlDebug)
+    sout << "[DEBUG] Found " << stagedfiles.size() << " staged files to clean up" << endl;
+
+  bool success = true;
+  for (vector<StagedFile>::iterator sf = stagedfiles.begin(); sf != stagedfiles.end(); ++sf)
+  {
+    if (noiselevel >= nlDebug)
+      sout << "[DEBUG] Deleting staged file: " << sf->staged_path << endl;
+      
+    // Delete the staged file since repair was successful
+    if (remove(sf->staged_path.c_str()) != 0)
+    {
+      if (noiselevel > nlSilent)
+        serr << "Warning: Could not delete staged file " << sf->staged_path << endl;
+      success = false;
+    }
+    else if (noiselevel > nlNoisy)
+    {
+      sout << "Deleted staged file: " << sf->staged_path << endl;
+    }
+  }
+
+  // Clear the staged files list
+  stagedfiles.clear();
+
+  return success;
+}
+
+// Cleanup staged files on failed repair
+bool Par2Repairer::CleanupStagedFilesOnFailure(void)
+{
+  if (stagingdirectory.empty() || stagedfiles.empty())
+    return true;
+
+  if (noiselevel > nlSilent)
+    sout << endl << "Restoring staged files..." << endl;
+
+  if (noiselevel >= nlDebug)
+    sout << "[DEBUG] Found " << stagedfiles.size() << " staged files to restore" << endl;
+
+  bool success = true;
+  for (vector<StagedFile>::iterator sf = stagedfiles.begin(); sf != stagedfiles.end(); ++sf)
+  {
+    if (noiselevel >= nlDebug)
+      sout << "[DEBUG] Processing staged file: " << sf->staged_path << " -> " << sf->original_path << endl;
+      
+    // Check if the original location is now occupied by a repaired file
+    if (DiskFile::FileExists(sf->original_path))
+    {
+      if (noiselevel >= nlDebug)
+        sout << "[DEBUG] Original location occupied, deleting repaired file: " << sf->original_path << endl;
+        
+      // Delete the repaired file since repair failed
+      if (remove(sf->original_path.c_str()) != 0)
+      {
+        if (noiselevel > nlSilent)
+          serr << "Warning: Could not delete repaired file " << sf->original_path << endl;
+        success = false;
+        continue;
+      }
+      else if (noiselevel > nlNoisy)
+      {
+        sout << "Deleted repaired file: " << sf->original_path << endl;
+      }
+    }
+
+    // Move the staged file back to its original location
+    if (rename(sf->staged_path.c_str(), sf->original_path.c_str()) != 0)
+    {
+      if (noiselevel > nlSilent)
+        serr << "Warning: Could not restore staged file " << sf->staged_path << " to " << sf->original_path << endl;
+      success = false;
+    }
+    else if (noiselevel > nlNoisy)
+    {
+      sout << "Restored staged file: " << sf->staged_path << " -> " << sf->original_path << endl;
+    }
+  }
+
+  // Clear the staged files list
+  stagedfiles.clear();
+
+  return success;
 }

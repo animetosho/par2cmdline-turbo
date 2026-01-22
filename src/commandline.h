@@ -97,6 +97,7 @@ public:
 
   string                              GetParFilename(void) const {return parfilename;}
   string                              GetBasePath(void) const    {return basepath;}
+  string                              GetStagingDirectory(void) const {return stagingdirectory;}
   const vector<string>& GetExtraFiles(void) const  {return extrafiles;}
   bool                                GetPurgeFiles(void) const  {return purgefiles;}
   bool                                GetRecursive(void) const   {return recursive;}
@@ -155,6 +156,8 @@ protected:
   string parfilename;          // The name of the PAR2 file to create, or
                                // the name of the first PAR2 file to read
                                // when verifying or repairing.
+
+  string stagingdirectory;     // The directory to store damaged files
 
   list<string> rawfilenames;   // The filenames on command-line
                                // (after expanding wildcards like '*')

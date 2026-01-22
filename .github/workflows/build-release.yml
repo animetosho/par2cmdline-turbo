@@ -4,6 +4,8 @@ on:
   push:
     branches:
     - 'turbo'
+  release:
+    types: [published]
 
 jobs:
   build-check-linux:
