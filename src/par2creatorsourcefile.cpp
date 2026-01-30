@@ -53,7 +53,7 @@ Par2CreatorSourceFile::~Par2CreatorSourceFile(void)
 // 16k of the file, and then compute the FileId and store the results
 // in a file description packet and a file verification packet.
 
-bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std::ostream &serr, const string &extrafile, u64 blocksize, bool deferhashcomputation, string basepath, u64 totalsize, atomic<u64> &totalprogress, mutex &output_lock)
+bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std::ostream &serr, const std::string &extrafile, u64 blocksize, bool deferhashcomputation, std::string basepath, u64 totalsize, std::atomic<u64> &totalprogress, std::mutex &output_lock)
 {
   // Get the filename and filesize
   diskfilename = extrafile;
@@ -119,8 +119,8 @@ bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std:
   {
     // Initialise a buffer to read the source file
     size_t buffersize = 1024*1024;
-    if (buffersize > min(blocksize,filesize))
-      buffersize = (size_t)min(blocksize,filesize);
+    if (buffersize > std::min(blocksize,filesize))
+      buffersize = (size_t)std::min(blocksize,filesize);
     char *buffer = new char[buffersize];
 
     // Get ready to start reading source file to compute the hashes and crcs
@@ -134,7 +134,7 @@ bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std:
     while (offset < filesize)
     {
       // Work out how much we can read
-      size_t want = (size_t)min(filesize-offset, (u64)buffersize);
+      size_t want = (size_t)std::min(filesize-offset, (u64)buffersize);
 
       // Read some data from the file into the buffer
       if (!diskfile->Read(offset, buffer, want))
@@ -166,7 +166,7 @@ bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std:
       while (used < want)
       {
         // How much of it can we use for the current block
-        u32 use = (u32)min(need, (u64)(want-used));
+        u32 use = (u32)std::min(need, (u64)(want-used));
 
         hasher->update(&buffer[used], use);
 
@@ -202,7 +202,7 @@ bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std:
         if (oldfraction != newfraction)
         {
           lock_guard<mutex> lock(output_lock);
-          sout << newfraction/10 << '.' << newfraction%10 << "%\r" << flush;
+          sout << newfraction/10 << '.' << newfraction%10 << "%\r" << std::flush;
         }
       }
 
@@ -251,10 +251,10 @@ void Par2CreatorSourceFile::Close(void)
 }
 
 
-void Par2CreatorSourceFile::RecordCriticalPackets(list<CriticalPacket*> &criticalpackets)
+void Par2CreatorSourceFile::RecordCriticalPackets(std::list<CriticalPacket*> &criticalpackets)
 {
   // Add the file description packet and file verification packet to
-  // the critical packet list.
+  // the critical packet std::list.
   criticalpackets.push_back(descriptionpacket);
   criticalpackets.push_back(verificationpacket);
 }
@@ -271,14 +271,14 @@ const MD5Hash& Par2CreatorSourceFile::FileId(void) const
   return descriptionpacket->FileId();
 }
 
-void Par2CreatorSourceFile::InitialiseSourceBlocks(vector<DataBlock>::iterator &sourceblock, u64 blocksize)
+void Par2CreatorSourceFile::InitialiseSourceBlocks(std::vector<DataBlock>::iterator &sourceblock, u64 blocksize)
 {
   for (u32 blocknum=0; blocknum<blockcount; blocknum++)
   {
     // Configure each source block to an appropriate offset and length within the source file.
     sourceblock->SetLocation(diskfile,                                       // file
                              blocknum * blocksize);                          // offset
-    sourceblock->SetLength(min(blocksize, filesize - (u64)blocknum * blocksize)); // length
+    sourceblock->SetLength(std::min(blocksize, filesize - (u64)blocknum * blocksize)); // length
     sourceblock++;
   }
 }

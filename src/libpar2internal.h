@@ -24,6 +24,7 @@
 #ifdef _WIN32
 // Windows includes
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 
 // System includes
@@ -38,10 +39,7 @@
 #include <assert.h>
 
 #define snprintf _snprintf_s
-#define sprintf  sprintf_s
-#define stricmp  _stricmp
 #define unlink   _unlink
-#define stat _stat
 
 #define __LITTLE_ENDIAN 1234
 #define __BIG_ENDIAN    4321
@@ -95,14 +93,8 @@ typedef unsigned int     size_t;
 #if STDC_HEADERS
 #  include <string.h>
 #else
-#  if !HAVE_STRCHR
-#    define strchr index
-#    define strrchr rindex
-#  endif
-char *strchr(), *strrchr();
 #  if !HAVE_MEMCPY
 #    define memcpy(d, s, n) bcopy((s), (d), (n))
-#    define memove(d, s, n) bcopy((s), (d), (n))
 #  endif
 #endif
 
@@ -110,11 +102,7 @@ char *strchr(), *strrchr();
 #  include <memory.h>
 #endif
 
-#if !HAVE_STRICMP
-#  if HAVE_STRCASECMP
-#    define stricmp strcasecmp
-#  endif
-#endif
+
 
 #if HAVE_SYS_STAT_H
 #  include <sys/stat.h>
@@ -134,7 +122,15 @@ char *strchr(), *strrchr();
 
 #include <errno.h>
 
-#define _MAX_PATH 4095
+#ifdef _WIN32
+// _WIN32: Redefine _MAX_PATH to support Windows long paths (\\?\ prefix)
+// Windows normally defines _MAX_PATH as 260, but with long path support
+// enabled and the \\?\ prefix, paths can be up to 32767 characters
+#   define _MAX_PATH 32767
+#else
+#   define _MAX_PATH 4095
+#endif
+
 
 #if HAVE_ENDIAN_H
 #  include <endian.h>
@@ -175,21 +171,10 @@ char *strchr(), *strrchr();
 #include <errno.h>
 
 #define _MAX_PATH 4095
-#define stricmp strcasecmp
-#define _stat stat
 
 #endif
 #endif
 
-#ifdef _WIN32
-#define PATHSEP "\\"
-#define ALTPATHSEP "/"
-#else
-#define PATHSEP "/"
-#define ALTPATHSEP "\\"
-#endif
-
-#define _FILE_THREADS 2
 #define NUM_TRANSFER_BUFFERS 2 // must be >= 2
 #define NUM_PARPAR_BUFFERS 12 // maximum number of internal ParPar staging buffers
 #define MAX_CHUNK_SIZE 32*1048576 // too large chunks are likely detrimental to performance; set to 0 to disable
@@ -199,15 +184,17 @@ char *strchr(), *strrchr();
 // STL includes
 #include <list>
 #include <map>
+#include <vector>
+#include <string>
+#include <sstream>
 #include <algorithm>
+#include <memory>
 
 #include <ctype.h>
 #include <iomanip>
 #include <codecvt>
 
 #include <cassert>
-
-using namespace std;
 
 #ifdef offsetof
 #undef offsetof

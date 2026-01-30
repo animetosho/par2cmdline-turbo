@@ -52,7 +52,7 @@ u32 gcd(u32 a, u32 b)
   }
 }
 
-template <> bool ReedSolomon<Galois8>::SetInput(const vector<bool> &present, std::ostream &sout, std::ostream &serr)
+template <> bool ReedSolomon<Galois8>::SetInput(const std::vector<bool> &present, std::ostream &sout, std::ostream &serr)
 {
   inputcount = (u32)present.size();
 

@@ -23,7 +23,7 @@ dnl                                               -*- Autoconf -*-
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.62)
-AC_INIT([par2cmdline], [1.0.0], [ike.devolder@gmail.com])
+AC_INIT([par2cmdline], [1.1.0], [ike.devolder@gmail.com])
 AC_DEFINE([X_PACKAGE], ["par2cmdline-turbo"], [Forked package name])
 AC_DEFINE([X_VERSION], ["1.3.0"], [Forked package version])
 
@@ -51,7 +51,7 @@ AC_LANG(C++)
 dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDBOOL
-AC_HEADER_STDC
+
 AC_CHECK_HEADERS([stdio.h] [endian.h])
 AC_CHECK_HEADERS([getopt.h] [limits.h])
 

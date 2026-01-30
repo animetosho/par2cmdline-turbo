@@ -78,6 +78,27 @@ typedef   unsigned long long   u64;
 #endif
 
 
+// Case-insensitive string comparison
+#ifdef _WIN32
+#  define stricmp  _stricmp
+#else
+#  include <string.h>
+#  define stricmp strcasecmp
+#endif
+
+// Path separators
+#ifdef _WIN32
+#  define PATHSEP "\\"
+#  define ALTPATHSEP "/"
+#else
+#  define PATHSEP "/"
+#  define ALTPATHSEP "\\"
+#endif
+
+// Default number of file threads
+#define _FILE_THREADS 2
+
+
 #include <ostream>
 #include <vector>
 #include <string>
@@ -164,6 +185,7 @@ Result par2repair(std::ostream &sout,
 		  const std::vector<std::string> &extrafiles,
 		  const bool dorepair,   // derived from operation
 		  const bool purgefiles,
+		  const bool renameonly,
 		  const bool skipdata,
 		  const u64 skipleaway
 		  );

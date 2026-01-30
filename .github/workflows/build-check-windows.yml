@@ -10,10 +10,20 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
     - name: Build
       run: msbuild -property:PlatformToolset=ClangCL -property:Configuration=Release -property:Platform=x64 par2cmdline.sln
+
+    - name: Build Unit Tests
+      shell: pwsh
+      run: |
+        .\tests\build_unit_tests.ps1 -Configuration Release -Platform x64
+
+    - name: Run Tests
+      shell: pwsh
+      run: |
+        .\tests\run_tests.ps1 -Par2Binary ".\x64\Release\par2.exe"

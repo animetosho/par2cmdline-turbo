@@ -22,17 +22,17 @@
 #include <iostream>
 #include "utf8.h"
 
-using namespace std;
+
 using namespace utf8;
 
 int test1()
 {
-  string emptyString = "";
-  wstring expectedWide = L"";
-  wstring actualWide = Utf8ToWide(emptyString);
+  std::string emptyString = "";
+  std::wstring expectedWide = L"";
+  std::wstring actualWide = Utf8ToWide(emptyString);
 
-  string expectedUtf8 = "";
-  string actualUtf8 = WideToUtf8(expectedWide);
+  std::string expectedUtf8 = "";
+  std::string actualUtf8 = WideToUtf8(expectedWide);
 
   if (actualWide == expectedWide && actualUtf8 == expectedUtf8)
     return 0;
@@ -42,12 +42,12 @@ int test1()
 
 int test2()
 {
-  string asciiString = "Hello, World!";
-  wstring expectedWide = L"Hello, World!";
-  wstring actualWide = Utf8ToWide(asciiString);
+  std::string asciiString = "Hello, World!";
+  std::wstring expectedWide = L"Hello, World!";
+  std::wstring actualWide = Utf8ToWide(asciiString);
 
-  string expectedUtf8 = "Hello, World!";
-  string actualUtf8 = WideToUtf8(expectedWide);
+  std::string expectedUtf8 = "Hello, World!";
+  std::string actualUtf8 = WideToUtf8(expectedWide);
 
   if (actualWide == expectedWide && actualUtf8 == expectedUtf8)
     return 0;
@@ -57,12 +57,13 @@ int test2()
 
 int test3()
 {
-  string nonAsciiString = "Привет, мир!";
-  wstring expectedWide = L"Привет, мир!";
-  wstring actualWide = Utf8ToWide(nonAsciiString);
+  // "Привет, мир!"
+  std::string nonAsciiString = "\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82, \xD0\xBC\xD0\xB8\xD1\x80!";
+  std::wstring expectedWide = L"\x041F\x0440\x0438\x0432\x0435\x0442, \x043C\x0438\x0440!";
+  std::wstring actualWide = Utf8ToWide(nonAsciiString);
 
-  string expectedUtf8 = "Привет, мир!";
-  string actualUtf8 = WideToUtf8(expectedWide);
+  std::string expectedUtf8 = "\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82, \xD0\xBC\xD0\xB8\xD1\x80!";
+  std::string actualUtf8 = WideToUtf8(expectedWide);
 
   if (actualWide == expectedWide && actualUtf8 == expectedUtf8)
     return 0;
@@ -72,12 +73,12 @@ int test3()
 
 int test4()
 {
-  string specialCharsString = "This string has: !@#$%^&*()_+=-`~[]{}:;'<>,.?/";
-  wstring expectedWide = L"This string has: !@#$%^&*()_+=-`~[]{}:;'<>,.?/";
-  wstring actualWide = Utf8ToWide(specialCharsString);
+  std::string specialCharsString = "This std::string has: !@#$%^&*()_+=-`~[]{}:;'<>,.?/";
+  std::wstring expectedWide = L"This std::string has: !@#$%^&*()_+=-`~[]{}:;'<>,.?/";
+  std::wstring actualWide = Utf8ToWide(specialCharsString);
 
-  string expectedUtf8 = "This string has: !@#$%^&*()_+=-`~[]{}:;'<>,.?/";
-  string actualUtf8 = WideToUtf8(expectedWide);
+  std::string expectedUtf8 = "This std::string has: !@#$%^&*()_+=-`~[]{}:;'<>,.?/";
+  std::string actualUtf8 = WideToUtf8(expectedWide);
 
   if (actualWide == expectedWide && actualUtf8 == expectedUtf8)
     return 0;
@@ -87,12 +88,13 @@ int test4()
 
 int test5()
 {
-  string multiLangString = "Привет! こんにちは世界! 안녕하세요!";
-  wstring expectedWide = L"Привет! こんにちは世界! 안녕하세요!";
-  wstring actualWide = Utf8ToWide(multiLangString);
+  // "Привет! こんにちは世界! 안녕하세요!"
+  std::string multiLangString = "\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82! \xE3\x81\x93\xE3\x82\x93\xE3\x81\xAB\xE3\x81\xA1\xE3\x81\xAF\xE4\xB8\x96\xE7\x95\x8C! \xEC\x95\x88\xEB\x85\x95\xED\x95\x98\xEC\x84\xB8\xEC\x9A\x94!";
+  std::wstring expectedWide = L"\x041F\x0440\x0438\x0432\x0435\x0442! \x3053\x3093\x306B\x3061\x306F\x4E16\x754C! \xC548\xB155\xD558\xC138\xC694!";
+  std::wstring actualWide = Utf8ToWide(multiLangString);
 
-  string expectedUtf8 = "Привет! こんにちは世界! 안녕하세요!";
-  string actualUtf8 = WideToUtf8(expectedWide);
+  std::string expectedUtf8 = "\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82! \xE3\x81\x93\xE3\x82\x93\xE3\x81\xAB\xE3\x81\xA1\xE3\x81\xAF\xE4\xB8\x96\xE7\x95\x8C! \xEC\x95\x88\xEB\x85\x95\xED\x95\x98\xEC\x84\xB8\xEC\x9A\x94!";
+  std::string actualUtf8 = WideToUtf8(expectedWide);
 
   if (actualWide == expectedWide && actualUtf8 == expectedUtf8)
     return 0;
@@ -111,12 +113,13 @@ int test6()
 
 int test7()
 {
-  wchar_t* wargv[3] = { L"Привет", L"мир", L"!" };
+  // L"Привет", L"мир", L"!"
+  wchar_t* wargv[3] = { const_cast<wchar_t*>(L"\x041F\x0440\x0438\x0432\x0435\x0442"), const_cast<wchar_t*>(L"\x043C\x0438\x0440"), const_cast<wchar_t*>(L"!") };
   WideToUtf8ArgsAdapter adapter(3, wargv);
   const char* const* utf8Args = adapter.GetUtf8Args();
 
   for (int i = 0; i < 3; ++i) {
-    if (WideToUtf8(wargv[i]) != string(utf8Args[i]))
+    if (WideToUtf8(wargv[i]) != std::string(utf8Args[i]))
     {
       return 1;
     }
@@ -127,7 +130,7 @@ int test7()
 
 int test8()
 {
-  wchar_t* wargv[3] = { L"arg1", nullptr, L"arg3" };
+  wchar_t* wargv[3] = { const_cast<wchar_t*>(L"arg1"), nullptr, const_cast<wchar_t*>(L"arg3") };
   WideToUtf8ArgsAdapter adapter(3, wargv);
   const char* const* utf8Args = adapter.GetUtf8Args();
   int argc = 3;
@@ -140,7 +143,7 @@ int test8()
       continue;
     }
 
-    if (WideToUtf8(wargv[i]) != string(utf8Args[i]))
+    if (WideToUtf8(wargv[i]) != std::string(utf8Args[i]))
     {
       return 1;
     }
@@ -153,53 +156,53 @@ int main()
 {
   if (test1())
   {
-    cerr << "FAILED: test1" << endl;
+    std::cerr << "FAILED: test1" << std::endl;
     return 1;
   }
 
   if (test2())
   {
-    cerr << "FAILED: test2" << endl;
+    std::cerr << "FAILED: test2" << std::endl;
     return 1;
   }
 
   if (test3())
   {
-    cerr << "FAILED: test3" << endl;
+    std::cerr << "FAILED: test3" << std::endl;
     return 1;
   }
 
   if (test4())
   {
-    cerr << "FAILED: test4" << endl;
+    std::cerr << "FAILED: test4" << std::endl;
     return 1;
   }
 
   if (test5())
   {
-    cerr << "FAILED: test5" << endl;
+    std::cerr << "FAILED: test5" << std::endl;
     return 1;
   }
 
   if (test6())
   {
-    cerr << "FAILED: test6" << endl;
+    std::cerr << "FAILED: test6" << std::endl;
     return 1;
   }
 
   if (test7())
   {
-    cerr << "FAILED: test7" << endl;
+    std::cerr << "FAILED: test7" << std::endl;
     return 1;
   }
 
   if (test8())
   {
-    cerr << "FAILED: test8" << endl;
+    std::cerr << "FAILED: test8" << std::endl;
     return 1;
   }
 
-  cout << "SUCCESS: utf8_test complete." << endl;
+  std::cout << "SUCCESS: utf8_test complete." << std::endl;
 
   return 0;
 }

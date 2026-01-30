@@ -15,6 +15,9 @@ jobs:
   build-check-macos:
     uses: ./.github/workflows/build-check-macos.yml
 
+  build-check-freebsd:
+    uses: ./.github/workflows/build-check-freebsd.yml
+
   build-linux:
     needs:
     - build-check-linux
@@ -25,8 +28,8 @@ jobs:
       matrix:
         include:
         - arch: amd64
-          configure_host: 
-          xcc: 
+          configure_host:
+          xcc:
         - arch: arm64
           configure_host: --host=aarch64-linux-gnu
           xcc: aarch64-linux-gnu-
@@ -37,27 +40,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
-    - uses: cyberjunk/gha-ubuntu-cross@v5
-      with:
-        arch: ${{ matrix.arch }}
+    - name: Install cross toolchains
+      if: matrix.arch != 'amd64'
+      run: |
+        sudo apt-get update
+        case "${{ matrix.arch }}" in
+          arm64)
+            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
+            ;;
+          armhf)
+            sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libc6-dev-armhf-cross
+            ;;
+        esac
 
-    - name: automake
-      run: ./automake.sh
-
-    - name: configure
-      run: ./configure ${{ matrix.configure_host }}
+    - name: Build
       env:
         CC: ${{ matrix.xcc }}gcc
         CXX: ${{ matrix.xcc }}g++
         LDFLAGS: -static -s
-
-    - name: make
-      run: make
+      run: |
+        ./automake.sh
+        ./configure ${{ matrix.configure_host }}
+        make
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: par2cmdline-turbo-linux-${{ matrix.arch }}
         path: |
@@ -81,7 +90,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
@@ -90,7 +99,7 @@ jobs:
       run: msbuild -property:PlatformToolset=ClangCL -property:Configuration=Release -property:Platform=${{ matrix.platform }} par2cmdline.sln
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: par2cmdline-turbo-win-${{ matrix.name }}
         path: |
@@ -117,30 +126,69 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: prepare
       run: brew install automake
 
-    - name: automake
-      run: ./automake.sh
-
-    - name: configure
-      run: ./configure ${{ matrix.configure_host }}
+    - name: Build
       env:
         CFLAGS: ${{ matrix.xcxxflags }}
         CXXFLAGS: ${{ matrix.xcxxflags }}
-
-    - name: make
-      run: make
-
-    - name: strip
-      run: strip par2
+      run: |
+        ./automake.sh
+        ./configure ${{ matrix.configure_host }}
+        make
+        strip par2
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: par2cmdline-turbo-macos-${{ matrix.arch }}
+        path: |
+          par2
+        retention-days: 5
+
+  build-freebsd:
+    needs:
+    - build-check-freebsd
+
+    name: build-freebsd (${{ matrix.arch }})
+
+    strategy:
+      matrix:
+        include:
+        - arch: x86-64
+          artifact_arch: amd64
+        - arch: arm64
+          artifact_arch: aarch64
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Build on FreeBSD
+      uses: cross-platform-actions/action@v0.32.0
+      env:
+        LDFLAGS: -static -s
+      with:
+        operating_system: freebsd
+        version: '15.0'
+        architecture: ${{ matrix.arch }}
+        environment_variables: LDFLAGS
+        shell: sh
+        run: |
+          sudo pkg install -y autoconf automake libtool
+          ./automake.sh
+          ./configure
+          make
+          strip par2
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: par2cmdline-turbo-freebsd-${{ matrix.artifact_arch }}
         path: |
           par2
         retention-days: 5
