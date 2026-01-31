@@ -38,6 +38,7 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <mutex>
 
 // A disk file can be any type of file that par2cmdline needs
 // to read or write data from or to.
@@ -45,7 +46,7 @@
 class DiskFile
 {
 public:
-  DiskFile(std::ostream &sout, std::ostream &serr);
+  DiskFile(std::ostream &sout, std::ostream &serr, std::mutex &serr_lock);
   ~DiskFile(void);
 
   // Ensures the specified path's parent directory exists
@@ -120,6 +121,7 @@ protected:
   // (Operator= is needed when vectors are resized.)
   std::ostream *sout; // stream for output (for commandline, this is cout)
   std::ostream *serr; // stream for errors (for commandline, this is cerr)
+  std::mutex *serr_lock;
 
   std::string filename;
   u64    filesize;

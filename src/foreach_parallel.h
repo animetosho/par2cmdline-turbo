@@ -7,7 +7,7 @@
 #include <future>
 
 template <class T>
-void foreach_parallel(const vector<T> &collection, u32 numThreads, const function<void(const T&)> &fn)
+void foreach_parallel(const std::vector<T> &collection, u32 numThreads, const std::function<void(const T&)> &fn)
 {
   if (numThreads == 1 || collection.size() == 1)
   {
@@ -17,17 +17,17 @@ void foreach_parallel(const vector<T> &collection, u32 numThreads, const functio
   else if (numThreads >= collection.size()) 
   {
     // spawn a thread for each item
-    vector<future<void>> tasks;
+    std::vector<std::future<void>> tasks;
     tasks.reserve(collection.size());
     for (const auto &item : collection)
-      tasks.push_back(async(launch::async, bind(fn, ref(item))));
+      tasks.push_back(std::async(std::launch::async, std::bind(fn, std::ref(item))));
     for (auto &task : tasks)
       task.wait();
   }
   else
   {
-    atomic<unsigned> itemPos(0);
-    vector<thread> threads;
+    std::atomic<unsigned> itemPos(0);
+    std::vector<std::thread> threads;
     threads.reserve(numThreads);
     for (unsigned thread = 0; thread < numThreads; thread++)
     {
@@ -35,7 +35,7 @@ void foreach_parallel(const vector<T> &collection, u32 numThreads, const functio
       {
         while (1)
         {
-          unsigned i = itemPos.fetch_add(1, memory_order_relaxed);
+          unsigned i = itemPos.fetch_add(1, std::memory_order_relaxed);
           if (i >= collection.size()) break;
           fn(collection.at(i));
         }

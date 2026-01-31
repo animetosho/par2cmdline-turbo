@@ -97,7 +97,7 @@ protected:
   bool VerifyExtraFiles(const std::vector<std::string> &extrafiles, const std::string &basepath, const bool renameonly);
 
   // Attempt to match the data in the DiskFile with the source file
-  bool VerifyDataFile(DiskFile *diskfile, Par2RepairerSourceFile *sourcefile, const std::string &basepath, const bool renameonly, std::mutex& output_lock);
+  bool VerifyDataFile(DiskFile *diskfile, Par2RepairerSourceFile *sourcefile, const std::string &basepath, const bool renameonly = false);
 
   // Perform a sliding window scan of the DiskFile looking for blocks of data that
   // might belong to any of the source files (for which a verification packet was
@@ -111,8 +111,7 @@ protected:
                     MatchType               &matchtype,  // [out]    The type of match
                     MD5Hash                 &hashfull,   // [out]    The full hash of the file
                     MD5Hash                 &hash16k,    // [out]    The hash of the first 16k
-                    u32                     &count,      // [out]    The number of blocks found
-                    mutex                   &output_lock);
+                    u32                     &count);     // [out]    The number of blocks found
 
   // Find out how much data we have found
   void UpdateVerificationResults(void);
@@ -153,6 +152,7 @@ protected:
 protected:
   std::ostream &sout; // stream for output (for commandline, this is cout)
   std::ostream &serr; // stream for errors (for commandline, this is cerr)
+  std::mutex output_lock;
 
   const NoiseLevel noiselevel;              // OnScreen display
 
@@ -215,7 +215,7 @@ protected:
   u64                       totaldata;               // Total amount of data to be processed.
   u64                       mttotalsize;             // Total size of files for mt-progress line
   u64                       mttotalextrasize;        // Total size of extra files for mt-progress line
-  atomic<u64>               mttotalprogress;         // MT total progress
+  std::atomic<u64>          mttotalprogress;         // MT total progress
   bool                      mtprocessingextrafiles;  // Are we currently processing extra files
 };
 

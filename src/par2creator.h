@@ -103,6 +103,7 @@ protected:
 protected:
   std::ostream &sout; // stream for output (for commandline, this is cout)
   std::ostream &serr; // stream for errors (for commandline, this is cerr)
+  std::mutex output_lock;
 
   const NoiseLevel noiselevel; // How noisy we should be
 

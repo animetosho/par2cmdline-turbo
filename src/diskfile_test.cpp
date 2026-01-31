@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <mutex>
 
 #include "libpar2internal.h"
 
@@ -216,9 +217,10 @@ int test2() {
   input1 << input1_contents;
   input1.close();
 
+  std::mutex output_lock;
   // read input1.txt
   {
-    DiskFile diskfile(std::cout, std::cerr);
+    DiskFile diskfile(std::cout, std::cerr, output_lock);
     if (diskfile.IsOpen()) {
       std::cout << "IsOpen failed 1" << std::endl;
       return 1;
@@ -318,7 +320,7 @@ int test2() {
 
     const char *input2_contents = "diskfile_test test3 input2.txt is longer";
 
-    DiskFile diskfile(std::cout, std::cerr);
+    DiskFile diskfile(std::cout, std::cerr, output_lock);
     if (diskfile.IsOpen()) {
       std::cout << "IsOpen failed 1" << std::endl;
       return 1;
@@ -436,7 +438,7 @@ int test2() {
     srand(23461119);
     for (size_t blocksize = 1; blocksize < buffer_len; blocksize *=2) {
       { // scope for variables used in writing
-	DiskFile diskfile(std::cout, std::cerr);
+	DiskFile diskfile(std::cout, std::cerr, output_lock);
 
 	if (!diskfile.Create("input2.txt", strlen(input2_contents))) {
 	  std::cout << "Create failed" << std::endl;
@@ -471,7 +473,7 @@ int test2() {
       }
 
       { // scope for variables used in reading.
-	DiskFile diskfile(std::cout, std::cerr);
+	DiskFile diskfile(std::cout, std::cerr, output_lock);
 
 	if (!diskfile.Open("input2.txt", strlen(input2_contents))) {
 	  std::cout << "Open failed 1" << std::endl;
@@ -525,7 +527,8 @@ int test3() {
     return 1;
   }
 
-  DiskFile df1(std::cout, std::cerr);
+  std::mutex output_lock;
+  DiskFile df1(std::cout, std::cerr, output_lock);
   df1.Open("input1.txt");
   if (!dfm.Insert(&df1)) {
     std::cout << "Insert failed" << std::endl;
@@ -536,7 +539,7 @@ int test3() {
     return 1;
   }
 
-  DiskFile df2(std::cout, std::cerr);
+  DiskFile df2(std::cout, std::cerr, output_lock);
   df2.Open("input1.txt");
   if (dfm.Insert(&df2)) {
     std::cout << "Insert succeeded when it shouldn't have" << std::endl;
@@ -605,7 +608,8 @@ int test5() {
   input1 << input1_contents;
   input1.close();
 
-  DiskFile diskfile(std::cout, std::cerr);
+  std::mutex output_lock;
+  DiskFile diskfile(std::cout, std::cerr, output_lock);
   if (diskfile.Create("input1.txt", strlen(input1_contents))) {
     std::cout << "Create succeeded when file already existed!" << std::endl;
     return 1;
@@ -625,8 +629,9 @@ int test5() {
 int test6() {
   const char *input1_contents = "diskfile_test test6 input1.txt";
 
+  std::mutex output_lock;
   {
-    DiskFile diskfile(std::cout, std::cerr);
+    DiskFile diskfile(std::cout, std::cerr, output_lock);
     if (!diskfile.Create("input1.txt", strlen(input1_contents))) {
       std::cout << "Create failed!" << std::endl;
       return 1;
@@ -641,7 +646,7 @@ int test6() {
   }
 
   {
-    DiskFile diskfile(std::cout, std::cerr);
+    DiskFile diskfile(std::cout, std::cerr, output_lock);
 
     if (!diskfile.Open("input1.txt")) {
       std::cout << "Open failed" << std::endl;
@@ -675,7 +680,7 @@ int test6() {
 
   // try again, writing mid-file with different maxlength.
   {
-    DiskFile diskfile(std::cout, std::cerr);
+    DiskFile diskfile(std::cout, std::cerr, output_lock);
     if (!diskfile.Create("input2.txt", strlen(input2_contents))) {
       std::cout << "Create 2 failed." << std::endl;
       return 1;
@@ -696,7 +701,7 @@ int test6() {
 
 
   {
-    DiskFile diskfile(std::cout, std::cerr);
+    DiskFile diskfile(std::cout, std::cerr, output_lock);
 
     if (!diskfile.Open("input2.txt")) {
       std::cout << "Open failed" << std::endl;

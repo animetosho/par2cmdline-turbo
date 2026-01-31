@@ -198,7 +198,7 @@ Result Par2Creator::Process(
       return eMemoryError;
 
     // Set output exponents
-    vector<u16> recoveryindices(recoveryblockcount);
+    std::vector<u16> recoveryindices(recoveryblockcount);
     for (u16 i = 0; i < recoveryblockcount; i++)
       recoveryindices[i] = i + firstrecoveryblock;
     if (!parpar.setRecoverySlices(recoveryindices))
@@ -261,7 +261,7 @@ Result Par2Creator::Process(
 bool Par2Creator::CheckBasepath(const std::string &parfilename)
 {
   std::string checkfilename = parfilename + ".check.par2";
-  std::unique_ptr<DiskFile> diskfile(new DiskFile(sout, serr));
+  std::unique_ptr<DiskFile> diskfile(new DiskFile(sout, serr, output_lock));
   size_t dummysize = 4096;
 
   if (!diskfile->Create(checkfilename, dummysize))
@@ -338,7 +338,7 @@ bool Par2Creator::CalculateProcessBlockSize(size_t memorylimit)
   else
   {
     // We use intermediary buffers to transfer data with, so include those in the limit calculation
-    u32 blockoverhead = NUM_TRANSFER_BUFFERS + min((u32)NUM_PARPAR_BUFFERS*2, sourceblockcount+1);
+    u32 blockoverhead = NUM_TRANSFER_BUFFERS + std::min((u32)NUM_PARPAR_BUFFERS*2, sourceblockcount+1);
 
     // Would single pass processing use too much memory
     if (blocksize * (recoveryblockcount + blockoverhead) > memorylimit)
@@ -370,23 +370,23 @@ bool Par2Creator::CalculateProcessBlockSize(size_t memorylimit)
 // the results in the file verification and file description packets.
 bool Par2Creator::OpenSourceFiles(const std::vector<std::string> &extrafiles, std::string basepath)
 {
-  atomic<bool> openfailed(false);
-  atomic<u64> totalprogress(0);
+  std::atomic<bool> openfailed(false);
+  std::atomic<u64> totalprogress(0);
 
   //Total size of files for mt-progress line
   for (size_t i=0; i<extrafiles.size(); ++i)
     mttotalsize += DiskFile::GetFileSize(extrafiles[i]);
 
-  mutex output_lock, packet_lock;
-  foreach_parallel<string>(extrafiles, Par2Creator::GetFileThreads(), [&, this](const string& extrafile) {
-    if (openfailed.load(memory_order_relaxed)) return;
+  std::mutex packet_lock;
+  foreach_parallel<std::string>(extrafiles, Par2Creator::GetFileThreads(), [&, this](const std::string& extrafile) {
+    if (openfailed.load(std::memory_order_relaxed)) return;
     Par2CreatorSourceFile *sourcefile = new Par2CreatorSourceFile;
 
     std::string name;
     DiskFile::SplitRelativeFilename(extrafile, basepath, name);
     if (noiselevel > nlSilent)
     {
-      lock_guard<mutex> lock(output_lock);
+      std::lock_guard<std::mutex> lock(output_lock);
       sout << "Opening: " << name << std::endl;
     }
 
@@ -394,14 +394,14 @@ bool Par2Creator::OpenSourceFiles(const std::vector<std::string> &extrafiles, st
     if (!sourcefile->Open(noiselevel, sout, serr, extrafile, blocksize, deferhashcomputation, basepath, mttotalsize, totalprogress, output_lock))
     {
       delete sourcefile;
-      openfailed.store(true, memory_order_relaxed);
+      openfailed.store(true, std::memory_order_relaxed);
       return;
     }
 
     // Record the file verification and file description packets
     // in the critical packet std::list.
     {
-      lock_guard<mutex> lock(packet_lock);
+      std::lock_guard<std::mutex> lock(packet_lock);
       sourcefile->RecordCriticalPackets(criticalpackets);
       
       // Add the source file to the sourcefiles array.
@@ -411,7 +411,7 @@ bool Par2Creator::OpenSourceFiles(const std::vector<std::string> &extrafiles, st
     sourcefile->Close();
   });
 
-  if (openfailed.load(memory_order_relaxed))
+  if (openfailed.load(std::memory_order_relaxed))
     return false;
 
   return true;
@@ -644,7 +644,7 @@ bool Par2Creator::InitialiseOutputFiles(const std::string &parfilename)
 
   // Allocate the recovery files
   {
-    recoveryfiles.resize(recoveryfilecount+1, DiskFile(sout, serr)); // pass default constructor.
+    recoveryfiles.resize(recoveryfilecount+1, DiskFile(sout, serr, output_lock)); // pass default constructor.
 
     // Sort critical packets, so we get consistency.
     criticalpackets.sort(CriticalPacket::CompareLess);
@@ -772,12 +772,12 @@ bool Par2Creator::ProcessData(u64 blockoffset, size_t blocklength)
   DiskFile *lastopenfile = NULL;
 
   // For tracking input buffer availability
-  future<void> bufferavail[NUM_TRANSFER_BUFFERS];
+  std::future<void> bufferavail[NUM_TRANSFER_BUFFERS];
   u32 bufferindex = NUM_TRANSFER_BUFFERS - 1;
   // Set all input buffers to available
   for (i32 i = 0; i < NUM_TRANSFER_BUFFERS; i++)
   {
-    promise<void> stub;
+    std::promise<void> stub;
     bufferavail[i] = stub.get_future();
     stub.set_value();
   }
@@ -865,7 +865,7 @@ bool Par2Creator::ProcessData(u64 blockoffset, size_t blocklength)
   if (recoveryblockcount > 0)
   {
     // For output, we only need two transfer buffers
-    future<bool> outbufavail[2];
+    std::future<bool> outbufavail[2];
     // Prepare first output
     outbufavail[0] = parpar.getOutput(0, transferbuffer);
 
@@ -883,7 +883,7 @@ bool Par2Creator::ProcessData(u64 blockoffset, size_t blocklength)
       // Wait for current buffer to be available
       if (!outbufavail[outputblock & 1].get())
       {
-        serr << "Internal checksum failure in recovery packet " << recoverypackets[outputblock].Exponent() << endl;
+        serr << "Internal checksum failure in recovery packet " << recoverypackets[outputblock].Exponent() << std::endl;
         return false;
       }
       

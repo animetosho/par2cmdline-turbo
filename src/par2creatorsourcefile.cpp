@@ -75,7 +75,7 @@ bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std:
   verificationpacket->Create(blockcount);
 
   // Create the diskfile object
-  diskfile  = new DiskFile(sout, serr);
+  diskfile  = new DiskFile(sout, serr, output_lock);
 
   // Open the source file
   if (!diskfile->Open(diskfilename, filesize))
@@ -147,7 +147,7 @@ bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std:
       // Whilst we haven't passed the 16k boundary, compute the 16k hash
       if (offset < 16384)
       {
-        hash16kcontext.Update(buffer, (size_t)min(want, (size_t)(16384-offset)));
+        hash16kcontext.Update(buffer, (size_t)std::min(want, (size_t)(16384-offset)));
         // If the new data passes the 16k boundary, compute the 16k hash for the file
         if (offset + want >= 16384)
         {
@@ -195,13 +195,13 @@ bool Par2CreatorSourceFile::Open(NoiseLevel noiselevel, std::ostream &sout, std:
       if (noiselevel > nlQuiet)
       {
         // Display progress
-        u64 progress = totalprogress.fetch_add(want, memory_order_relaxed);
+        u64 progress = totalprogress.fetch_add(want, std::memory_order_relaxed);
         u32 oldfraction = (u32)(1000 * progress / totalsize);
         u32 newfraction = (u32)(1000 * (progress + want) / totalsize);
 
         if (oldfraction != newfraction)
         {
-          lock_guard<mutex> lock(output_lock);
+          std::lock_guard<std::mutex> lock(output_lock);
           sout << newfraction/10 << '.' << newfraction%10 << "%\r" << std::flush;
         }
       }

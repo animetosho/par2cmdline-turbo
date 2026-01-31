@@ -8,7 +8,7 @@ inline u32 HasherGetBlock(IHasherInput* hasher, MD5Hash& blockhash, u64 zeropad 
 {
   u8 md5crc[20];
   hasher->getBlock(md5crc, zeropad);
-  memcpy(blockhash.hash, md5crc, 16);
+  std::memcpy(blockhash.hash, md5crc, 16);
   return md5crc[16] | (md5crc[17] << 8) | (md5crc[18] << 16) | (md5crc[19] << 24);
 }
 

@@ -43,9 +43,10 @@ static char THIS_FILE[]=__FILE__;
 #define OffsetType __int64
 #define MaxOffset 0x7fffffffffffffffI64
 
-DiskFile::DiskFile(std::ostream &sout, std::ostream &serr)
+DiskFile::DiskFile(std::ostream &sout, std::ostream &serr, std::mutex &serr_lock)
 : sout(&sout)
 , serr(&serr)
+, serr_lock(&serr_lock)
 {
   filename = "";
   filesize = 0;
@@ -93,7 +94,7 @@ bool DiskFile::CreateParentDirectory(std::string _pathname)
     {
       DWORD error = ::GetLastError();
 
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not create the " << path << " directory: " << ErrorMessage(error) << std::endl;
 
       return false;
@@ -121,7 +122,7 @@ bool DiskFile::Create(std::string _filename, u64 _filesize)
   {
     DWORD error = ::GetLastError();
 
-    #pragma omp critical
+    std::lock_guard<std::mutex> lock(*serr_lock);
     *serr << "Could not create \"" << _filename << "\": " << ErrorMessage(error) << std::endl;
 
     return false;
@@ -138,8 +139,10 @@ bool DiskFile::Create(std::string _filename, u64 _filesize)
     {
       DWORD error = ::GetLastError();
 
-      #pragma omp critical
-      *serr << "Could not set size of \"" << _filename << "\": " << ErrorMessage(error) << std::endl;
+      {
+        std::lock_guard<std::mutex> lock(*serr_lock);
+        *serr << "Could not set size of \"" << _filename << "\": " << ErrorMessage(error) << std::endl;
+      }
 
       ::CloseHandle(hFile);
       hFile = INVALID_HANDLE_VALUE;
@@ -153,8 +156,10 @@ bool DiskFile::Create(std::string _filename, u64 _filesize)
     {
       DWORD error = ::GetLastError();
 
-      #pragma omp critical
-      *serr << "Could not set size of \"" << _filename << "\": " << ErrorMessage(error) << std::endl;
+      {
+        std::lock_guard<std::mutex> lock(*serr_lock);
+        *serr << "Could not set size of \"" << _filename << "\": " << ErrorMessage(error) << std::endl;
+      }
 
       ::CloseHandle(hFile);
       hFile = INVALID_HANDLE_VALUE;
@@ -187,7 +192,7 @@ bool DiskFile::Write(u64 _offset, const void *buffer, size_t length, LengthType 
     {
       DWORD error = ::GetLastError();
 
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not write " << (u64)length << " bytes to \"" << filename << "\" at offset " << _offset << ": " << ErrorMessage(error) << std::endl;
 
       return false;
@@ -210,7 +215,7 @@ bool DiskFile::Write(u64 _offset, const void *buffer, size_t length, LengthType 
     {
       DWORD error = ::GetLastError();
 
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not write " << write << " bytes to \"" << filename << "\" at offset " << _offset << ": " << ErrorMessage(error) << std::endl;
 
       return false;
@@ -218,7 +223,7 @@ bool DiskFile::Write(u64 _offset, const void *buffer, size_t length, LengthType 
 
     if (wrote != write)
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "INFO: Incomplete write to \"" << filename << "\" at offset " << _offset << ".  Expected to write " << write << " bytes and wrote " << wrote << " bytes." << std::endl;
     }
 
@@ -256,7 +261,7 @@ bool DiskFile::Open(const std::string &_filename, u64 _filesize)
     case ERROR_PATH_NOT_FOUND:
       break;
     default:
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not open \"" << _filename << "\": " << ErrorMessage(error) << std::endl;
     }
 
@@ -286,7 +291,7 @@ bool DiskFile::Read(u64 _offset, void *buffer, size_t length, LengthType maxleng
     {
       DWORD error = ::GetLastError();
 
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not read " << (u64)length << " bytes from \"" << filename << "\" at offset " << _offset << ": " << ErrorMessage(error) << std::endl;
 
       return false;
@@ -308,7 +313,7 @@ bool DiskFile::Read(u64 _offset, void *buffer, size_t length, LengthType maxleng
     {
       DWORD error = ::GetLastError();
 
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not read " << (u64)length << " bytes from \"" << filename << "\" at offset " << _offset << ": " << ErrorMessage(error) << std::endl;
 
       return false;
@@ -316,7 +321,7 @@ bool DiskFile::Read(u64 _offset, void *buffer, size_t length, LengthType maxleng
 
     if (want != got)
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Incomplete read from \"" << filename << "\" at offset " << offset << ".  Tried to read " << want << " bytes and received " << got << " bytes." << std::endl;
     }
 
@@ -448,9 +453,10 @@ bool DiskFile::FileExists(std::string filename)
 #endif
 
 
-DiskFile::DiskFile(std::ostream &sout, std::ostream &serr)
+DiskFile::DiskFile(std::ostream &sout, std::ostream &serr, std::mutex &serr_lock)
 : sout(&sout)
 , serr(&serr)
+, serr_lock(&serr_lock)
 {
   //filename;
   filesize = 0;
@@ -492,7 +498,7 @@ bool DiskFile::CreateParentDirectory(std::string _pathname)
 
     if (mkdir(path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH))
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not create the " << path << " directory: " << strerror(errno) << std::endl;
       return false;
     }
@@ -516,7 +522,7 @@ bool DiskFile::Create(std::string _filename, u64 _filesize)
   // the Windows code would error out after too.
   if (FileExists(filename))
   {
-    #pragma omp critical
+    std::lock_guard<std::mutex> lock(*serr_lock);
     *serr << "Could not create \"" << _filename << "\": File already exists." << std::endl;
     return false;
   }
@@ -524,7 +530,7 @@ bool DiskFile::Create(std::string _filename, u64 _filesize)
   file = fopen(_filename.c_str(), "wb");
   if (file == 0)
   {
-    #pragma omp critical
+    std::lock_guard<std::mutex> lock(*serr_lock);
     *serr << "Could not create " << _filename << ": " << strerror(errno) << std::endl;
 
     return false;
@@ -532,7 +538,7 @@ bool DiskFile::Create(std::string _filename, u64 _filesize)
 
   if (_filesize > (u64)MaxOffset)
   {
-    #pragma omp critical
+    std::lock_guard<std::mutex> lock(*serr_lock);
     *serr << "Requested file size for " << _filename << " is too large." << std::endl;
     return false;
   }
@@ -541,8 +547,10 @@ bool DiskFile::Create(std::string _filename, u64 _filesize)
   {
     if (fseek(file, (OffsetType)_filesize-1, SEEK_SET))
     {
-      #pragma omp critical
-      *serr << "Could not set end of file of " << _filename << ": " << strerror(errno) << std::endl;
+      {
+        std::lock_guard<std::mutex> lock(*serr_lock);
+        *serr << "Could not set end of file of " << _filename << ": " << strerror(errno) << std::endl;
+      }
 
       fclose(file);
       file = 0;
@@ -552,8 +560,10 @@ bool DiskFile::Create(std::string _filename, u64 _filesize)
 
     if (1 != fwrite(&_filesize, 1, 1, file))
     {
-      #pragma omp critical
-      *serr << "Could not set end of file of " << _filename << ": " << strerror(errno) << std::endl;
+      {
+        std::lock_guard<std::mutex> lock(*serr_lock);
+        *serr << "Could not set end of file of " << _filename << ": " << strerror(errno) << std::endl;
+      }
 
       fclose(file);
       file = 0;
@@ -578,7 +588,7 @@ bool DiskFile::Write(u64 _offset, const void *buffer, size_t length, LengthType 
   {
     if (_offset > (u64)MaxOffset)
     {
-        #pragma omp critical
+        std::lock_guard<std::mutex> lock(*serr_lock);
         *serr << "Could not write " << (u64)length << " bytes to " << filename << " at offset " << _offset << std::endl;
       return false;
     }
@@ -586,7 +596,7 @@ bool DiskFile::Write(u64 _offset, const void *buffer, size_t length, LengthType 
 
     if (fseek(file, (OffsetType)_offset, SEEK_SET))
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not write " << (u64)length << " bytes to " << filename << " at offset " << _offset << ": " << strerror(errno) << std::endl;
       return false;
     }
@@ -604,7 +614,7 @@ bool DiskFile::Write(u64 _offset, const void *buffer, size_t length, LengthType 
     LengthType wrote = fwrite(buffer, 1, write, file);
     if (wrote != write)
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not write " << (u64)length << " bytes to " << filename << " at offset " << _offset << ": " << strerror(errno) << std::endl;
       return false;
     }
@@ -633,7 +643,7 @@ bool DiskFile::Open(const std::string &_filename, u64 _filesize)
 
   if (_filesize > (u64)MaxOffset)
   {
-    #pragma omp critical
+    std::lock_guard<std::mutex> lock(*serr_lock);
     *serr << "File size for " << _filename << " is too large." << std::endl;
     return false;
   }
@@ -660,7 +670,7 @@ bool DiskFile::Read(u64 _offset, void *buffer, size_t length, LengthType maxleng
   {
     if (_offset > (u64)MaxOffset)
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not read " << (u64)length << " bytes from " << filename << " at offset " << _offset << std::endl;
       return false;
     }
@@ -668,7 +678,7 @@ bool DiskFile::Read(u64 _offset, void *buffer, size_t length, LengthType maxleng
 
     if (fseek(file, (OffsetType)_offset, SEEK_SET))
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not read " << (u64)length << " bytes from " << filename << " at offset " << _offset << ": " << strerror(errno) << std::endl;
       return false;
     }
@@ -689,7 +699,7 @@ bool DiskFile::Read(u64 _offset, void *buffer, size_t length, LengthType maxleng
     {
       // NOTE: This can happen on error or when hitting the end-of-file.
 
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << "Could not read " << (u64)length << " bytes from " << filename << " at offset " << _offset << ": " << strerror(errno) << std::endl;
       return false;
     }
@@ -970,7 +980,7 @@ bool DiskFile::Delete(void)
 #endif
   else
   {
-    #pragma omp critical
+    std::lock_guard<std::mutex> lock(*serr_lock);
     *serr << "Cannot delete " << filename << std::endl;
 
     return false;
@@ -1031,7 +1041,7 @@ bool DiskFile::Rename(void)
     // Check path length against maximum
     if (newname.length() > _MAX_PATH)
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << filename << " pathlength is more than " << _MAX_PATH << "." << std::endl;
       return false;
     }
@@ -1058,7 +1068,7 @@ bool DiskFile::Rename(void)
     // Check path length against maximum
     if (newname.length() > _MAX_PATH)
     {
-      #pragma omp critical
+      std::lock_guard<std::mutex> lock(*serr_lock);
       *serr << filename << " pathlength is more than " << _MAX_PATH << "." << std::endl;
       return false;
     }
@@ -1109,7 +1119,7 @@ bool DiskFile::Rename(std::string _filename)
     return true;
   }
 
-  #pragma omp critical
+  std::lock_guard<std::mutex> lock(*serr_lock);
   *serr << filename << " cannot be renamed to " << _filename << std::endl;
 
   return false;
@@ -1126,7 +1136,7 @@ bool DiskFile::Rename(std::string _filename)
     return true;
   }
 
-  #pragma omp critical
+  std::lock_guard<std::mutex> lock(*serr_lock);
   *serr << filename << " cannot be renamed to " << _filename << std::endl;
 
   return false;

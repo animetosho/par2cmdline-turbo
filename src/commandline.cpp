@@ -108,7 +108,7 @@ void CommandLine::usage(void)
     "  -q [-q]  : Be more quiet (-q -q gives silence)\n"
     "  -m<n>    : Memory (in MB) to use (default is half of total physical memory)\n";
   std::cout <<
-    "  -t<n>    : Number of threads used for main processing (" << thread::hardware_concurrency() << " detected)\n"
+    "  -t<n>    : Number of threads used for main processing (" << std::thread::hardware_concurrency() << " detected)\n"
     "  -T<n>    : Number of files hashed in parallel\n"
     "             (" << _FILE_THREADS << " are the default)\n";
   std::cout <<

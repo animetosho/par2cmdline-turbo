@@ -156,7 +156,7 @@ bool FileCheckSummer::Jump(u64 distance)
   // If we already have a block of data available, we can compute the hash whilst waiting for the Fill operation
   if (keep >= blocksize && distance == blocksize)
   {
-    future<void> asynchash = async(launch::async, [this]() {
+    std::future<void> asynchash = std::async(std::launch::async, [this]() {
       ComputeCurrentChecksum(true);
     });
     bool success = Fill();
@@ -181,7 +181,7 @@ void FileCheckSummer::ComputeCurrentChecksum(bool domd5)
   if (hasher)
   {
     // File/block hash is in sync, so compute all hashes
-    size_t blocklen = (size_t)min(blocksize, filesize - currentoffset);
+    size_t blocklen = (size_t)std::min(blocksize, filesize - currentoffset);
     size_t zeropad = blocksize - blocklen;
     hasher->update(buffer, blocklen);
     checksum = HasherGetBlock(hasher, blockhash, zeropad);

@@ -266,7 +266,7 @@ bool Par1Repairer::LoadRecoveryFile(std::string filename)
     return true;
   }
 
-  DiskFile *diskfile = new DiskFile(sout, serr);
+  DiskFile *diskfile = new DiskFile(sout, serr, output_lock);
 
   // Open the file
   if (!diskfile->Open(filename))
@@ -624,7 +624,7 @@ bool Par1Repairer::VerifySourceFiles(void)
     }
     else
     {
-      DiskFile *diskfile = new DiskFile(sout, serr);
+      DiskFile *diskfile = new DiskFile(sout, serr, output_lock);
 
       // Does the target file exist
       if (diskfile->Open(filename))
@@ -707,7 +707,7 @@ bool Par1Repairer::VerifyExtraFiles(const std::vector<std::string> &extrafiles)
       // Has this file already been dealt with
       if (diskfilemap.Find(filename) == 0)
       {
-        DiskFile *diskfile = new DiskFile(sout, serr);
+        DiskFile *diskfile = new DiskFile(sout, serr, output_lock);
 
         // Does the file exist
         if (!diskfile->Open(filename))
@@ -1128,7 +1128,7 @@ bool Par1Repairer::CreateTargetFiles(void)
     // If the file does not exist
     if (!sourcefile->GetTargetExists())
     {
-      DiskFile *targetfile = new DiskFile(sout, serr);
+      DiskFile *targetfile = new DiskFile(sout, serr, output_lock);
       std::string filename = sourcefile->FileName();
       u64 filesize = sourcefile->FileSize();
 
@@ -1482,7 +1482,7 @@ bool Par1Repairer::RemoveParFiles(void)
 
   for (std::list<std::string>::const_iterator s=parlist.begin(); s!=parlist.end(); ++s)
   {
-    DiskFile *diskfile = new DiskFile(sout, serr);
+    DiskFile *diskfile = new DiskFile(sout, serr, output_lock);
 
     if (diskfile->Open(*s))
     {
