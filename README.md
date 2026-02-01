@@ -60,6 +60,7 @@ Some speed comparisons posted by others:
 * [PAR2 create](https://github.com/animetosho/ParPar/blob/master/benchmarks/info.md)
 * [PAR2 create](https://github.com/animetosho/par2cmdline-turbo/issues/4#issue-1640569835) (v0.9.0)
 * [PAR2 verification/repair](https://gist.github.com/thezoggy/3c243b712f0cc960fa4dd78ff1ab56e7) (multiple machines/OSes)
+* [PAR2 create/verification/repair](https://github.com/pmarreck/par2z#benchmarks) (Apple M-series CPU)
 
 ## See Also
 
