@@ -58,6 +58,11 @@
   <ItemGroup>
     <ClInclude Include="..\src\md5.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\parpar\hasher.vcxproj">
+      <Project>{c4657dcb-7b83-4608-a1d5-df38d37c6fcf}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
