@@ -89,7 +89,9 @@
     <ClInclude Include="src\descriptionpacket.h" />
     <ClInclude Include="src\diskfile.h" />
     <ClInclude Include="src\filechecksummer.h" />
+    <ClInclude Include="src\foreach_parallel.h" />
     <ClInclude Include="src\galois.h" />
+    <ClInclude Include="src\hasher.h" />
     <ClInclude Include="src\letype.h" />
     <ClInclude Include="src\libpar2.h" />
     <ClInclude Include="src\libpar2internal.h" />
@@ -108,6 +110,14 @@
     <ClInclude Include="src\verificationhashtable.h" />
     <ClInclude Include="src\verificationpacket.h" />
     <ClInclude Include="src\utf8.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="parpar\gf16.vcxproj">
+      <Project>{2a658dc2-a6ea-41d1-ad78-2d02675fab14}</Project>
+    </ProjectReference>
+    <ProjectReference Include="parpar\hasher.vcxproj">
+      <Project>{c4657dcb-7b83-4608-a1d5-df38d37c6fcf}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

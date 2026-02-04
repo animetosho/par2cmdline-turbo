@@ -107,10 +107,16 @@
     <ClInclude Include="src\diskfile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\foreach_parallel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\filechecksummer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\galois.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\hasher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\letype.h">
