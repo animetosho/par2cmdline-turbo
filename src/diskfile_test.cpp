@@ -249,9 +249,9 @@ int test2() {
       std::cout << "FileSize failed" << std::endl;
       return 1;
     }
-    const size_t buffer_len = strlen(input1_contents)+1;  // for end-of-std::string
+    const size_t buffer_len = strlen(input1_contents)+1;  // for end-of-string
     u8 *buffer = new u8[buffer_len];
-    // put end-of-std::string in buffer.
+    // put end-of-string in buffer.
     buffer[buffer_len-1] = '\0';
 
     if (!diskfile.Read(0, buffer, buffer_len - 1)) {
@@ -356,9 +356,9 @@ int test2() {
 
     /*    // confirm write with read
 
-    const size_t buffer_len = strlen(input2_contents)+1;  // for end-of-std::string
+    const size_t buffer_len = strlen(input2_contents)+1;  // for end-of-string
     u8 *buffer = new u8[buffer_len];
-    // put end-of-std::string in buffer.
+    // put end-of-string in buffer.
     buffer[buffer_len-1] = '\0';
     if (!diskfile.Read(0, buffer, buffer_len - 1)) {
       std::cout << "Read whole file returned false 1" << std::endl;
@@ -480,7 +480,7 @@ int test2() {
 	  return 1;
 	}
 
-	// add one more char, for end-of-std::string
+	// add one more char, for end-of-string
 	u8 *buffer = new u8[buffer_len + 1];
 	buffer[buffer_len] = '\0';
 
@@ -653,9 +653,9 @@ int test6() {
       return 1;
     }
 
-    const size_t buffer_len = strlen(input1_contents)+1;  // for end-of-std::string
+    const size_t buffer_len = strlen(input1_contents)+1;  // for end-of-string
     u8 *buffer = new u8[buffer_len];
-    // put end-of-std::string in buffer.
+    // put end-of-string in buffer.
     buffer[buffer_len-1] = '\0';
 
     if (!diskfile.Read(0, buffer, buffer_len - 1, 2)) {
@@ -708,9 +708,9 @@ int test6() {
       return 1;
     }
 
-    const size_t buffer_len = strlen(input2_contents)+1;  // for end-of-std::string
+    const size_t buffer_len = strlen(input2_contents)+1;  // for end-of-string
     u8 *buffer = new u8[buffer_len];
-    // put end-of-std::string in buffer.
+    // put end-of-string in buffer.
     buffer[buffer_len-1] = '\0';
 
 

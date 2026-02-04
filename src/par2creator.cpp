@@ -399,7 +399,7 @@ bool Par2Creator::OpenSourceFiles(const std::vector<std::string> &extrafiles, st
     }
 
     // Record the file verification and file description packets
-    // in the critical packet std::list.
+    // in the critical packet list.
     {
       std::lock_guard<std::mutex> lock(packet_lock);
       sourcefile->RecordCriticalPackets(criticalpackets);
@@ -420,10 +420,10 @@ bool Par2Creator::OpenSourceFiles(const std::vector<std::string> &extrafiles, st
 // Create the main packet and determine the setid to use with all packets
 bool Par2Creator::CreateMainPacket(void)
 {
-  // Construct the main packet from the std::list of source files and the block size.
+  // Construct the main packet from the list of source files and the block size.
   mainpacket = new MainPacket;
 
-  // Add the main packet to the std::list of critical packets.
+  // Add the main packet to the list of critical packets.
   criticalpackets.push_back(mainpacket);
 
   // Create the packet (sourcefiles will get sorted into FileId order).

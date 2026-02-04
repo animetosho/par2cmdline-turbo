@@ -615,7 +615,7 @@ bool Par2Repairer::LoadRecoveryPacket(DiskFile *diskfile, u64 offset, PACKET_HEA
   // What is the exponent value of this recovery packet
   u32 exponent = packet->Exponent();
 
-  // Try to insert the new packet into the recovery packet std::map
+  // Try to insert the new packet into the recovery packet map
   std::pair<std::map<u32,RecoveryPacket*>::const_iterator, bool> location = recoverypacketmap.insert(std::pair<u32,RecoveryPacket*>(exponent, packet));
 
   // Did the insert fail
@@ -644,7 +644,7 @@ bool Par2Repairer::LoadDescriptionPacket(DiskFile *diskfile, u64 offset, PACKET_
   // What is the fileid
   const MD5Hash &fileid = packet->FileId();
 
-  // Look up the fileid in the source file std::map for an existing source file entry
+  // Look up the fileid in the source file map for an existing source file entry
   std::map<MD5Hash, Par2RepairerSourceFile*>::iterator sfmi = sourcefilemap.find(fileid);
   Par2RepairerSourceFile *sourcefile = (sfmi == sourcefilemap.end()) ? 0 :sfmi->second;
 
@@ -670,7 +670,7 @@ bool Par2Repairer::LoadDescriptionPacket(DiskFile *diskfile, u64 offset, PACKET_
     // Create a new source file for the packet
     sourcefile = new Par2RepairerSourceFile(packet, NULL);
 
-    // Record the source file in the source file std::map
+    // Record the source file in the source file map
     sourcefilemap.insert(std::pair<MD5Hash, Par2RepairerSourceFile*>(fileid, sourcefile));
 
     return true;
@@ -692,7 +692,7 @@ bool Par2Repairer::LoadVerificationPacket(DiskFile *diskfile, u64 offset, PACKET
   // What is the fileid
   const MD5Hash &fileid = packet->FileId();
 
-  // Look up the fileid in the source file std::map for an existing source file entry
+  // Look up the fileid in the source file map for an existing source file entry
   std::map<MD5Hash, Par2RepairerSourceFile*>::iterator sfmi = sourcefilemap.find(fileid);
   Par2RepairerSourceFile *sourcefile = (sfmi == sourcefilemap.end()) ? 0 :sfmi->second;
 
@@ -719,7 +719,7 @@ bool Par2Repairer::LoadVerificationPacket(DiskFile *diskfile, u64 offset, PACKET
     // Create a new source file for the packet
     sourcefile = new Par2RepairerSourceFile(NULL, packet);
 
-    // Record the source file in the source file std::map
+    // Record the source file in the source file map
     sourcefilemap.insert(std::pair<MD5Hash, Par2RepairerSourceFile*>(fileid, sourcefile));
 
     return true;
@@ -1010,7 +1010,7 @@ bool Par2Repairer::CreateSourceFileList(void)
   {
     const MD5Hash &fileid = mainpacket->FileId(filenumber);
 
-    // Look up the fileid in the source file std::map
+    // Look up the fileid in the source file map
     std::map<MD5Hash, Par2RepairerSourceFile*>::iterator sfmi = sourcefilemap.find(fileid);
     Par2RepairerSourceFile *sourcefile = (sfmi == sourcefilemap.end()) ? 0 :sfmi->second;
 
@@ -1200,7 +1200,7 @@ bool Par2Repairer::VerifySourceFiles(const std::string& basepath, std::vector<st
 
   std::atomic<bool> finalresult(true);
 
-  // Created a sorted std::list of the source files and verify them in that
+  // Created a sorted list of the source files and verify them in that
   // order rather than the order they are in the main packet.
   std::vector<Par2RepairerSourceFile*> sortedfiles;
 
@@ -1262,7 +1262,7 @@ bool Par2Repairer::VerifySourceFiles(const std::string& basepath, std::vector<st
       sout << "[DEBUG] targ: " << target_pathname << std::endl;
     }
 
-    // if the target file is in the std::list of extra files, we remove it
+    // if the target file is in the list of extra files, we remove it
     // from the extra files.
     {
       std::lock_guard<std::mutex> lock(xfiles_lock);
@@ -2316,7 +2316,7 @@ bool Par2Repairer::CreateTargetFiles(void)
         ++tb;
       }
 
-      // Add the file to the std::list of those that will need to be verified
+      // Add the file to the list of those that will need to be verified
       // once the repair has completed.
       verifylist.push_back(sourcefile);
     }
@@ -2362,7 +2362,7 @@ bool Par2Repairer::ComputeRSmatrix(void)
       // Record that the block was found
       *pres = true;
 
-      // Add the block to the std::list of those which will be read
+      // Add the block to the list of those which will be read
       // as input (and which might also need to be copied).
       *inputblock = &*sourceblock;
       *copyblock = &*targetblock;
@@ -2375,7 +2375,7 @@ bool Par2Repairer::ComputeRSmatrix(void)
       // Record that the block was missing
       *pres = false;
 
-      // Add the block to the std::list of those to be written
+      // Add the block to the list of those to be written
       *outputblock = &*targetblock;
       ++outputblock;
     }
@@ -2469,7 +2469,7 @@ bool Par2Repairer::ComputeRSmatrix(void)
     // Get the DataBlock from the recovery packet
     DataBlock *recoveryblock = recoverypacket->GetDataBlock();
 
-    // Add the recovery block to the std::list of blocks that will be read
+    // Add the recovery block to the list of blocks that will be read
     *inputblock = recoveryblock;
     ++inputblock;
   }
@@ -2741,7 +2741,7 @@ bool Par2Repairer::VerifyTargetFiles(const std::string &basepath)
       mttotalsize += verifylist[i]->GetDescriptionPacket()->FileSize();
   }
 
-  // Iterate through each file in the verification std::list
+  // Iterate through each file in the verification list
   foreach_parallel<Par2RepairerSourceFile*>(verifylist, Par2Repairer::GetFileThreads(), [&, this](Par2RepairerSourceFile* const& verifyfile) {
     Par2RepairerSourceFile *sourcefile = verifyfile;
     DiskFile *targetfile = sourcefile->GetTargetFile();
@@ -2787,7 +2787,7 @@ bool Par2Repairer::DeleteIncompleteTargetFiles(void)
 {
   std::vector<Par2RepairerSourceFile*>::iterator sf = verifylist.begin();
 
-  // Iterate through each file in the verification std::list
+  // Iterate through each file in the verification list
   while (sf != verifylist.end())
   {
     Par2RepairerSourceFile *sourcefile = *sf;
