@@ -433,25 +433,25 @@ check_PROGRAMS = tests/letype_test tests/crc_test tests/md5_test tests/diskfile_
 tests_letype_test_SOURCES = src/letype_test.cpp src/letype.h
 
 tests_crc_test_SOURCES = src/crc_test.cpp src/crc.cpp src/crc.h
-tests_crc_test_LDADD = libpar2.a
+tests_crc_test_LDADD = libpar2.a $(LDADD)
 
 tests_md5_test_SOURCES = src/md5_test.cpp src/md5.cpp src/md5.h
-tests_md5_test_LDADD = libpar2.a
+tests_md5_test_LDADD = libpar2.a $(LDADD)
 
 tests_diskfile_test_SOURCES = src/diskfile_test.cpp src/diskfile.cpp src/diskfile.h
-tests_diskfile_test_LDADD = libpar2.a
+tests_diskfile_test_LDADD = libpar2.a $(LDADD)
 
 tests_libpar2_test_SOURCES = src/libpar2_test.cpp src/libpar2.h
-tests_libpar2_test_LDADD = libpar2.a
+tests_libpar2_test_LDADD = libpar2.a $(LDADD)
 
 tests_commandline_test_SOURCES = src/commandline_test.cpp src/commandline.cpp src/commandline.h
-tests_commandline_test_LDADD = libpar2.a
+tests_commandline_test_LDADD = libpar2.a $(LDADD)
 
 tests_descriptionpacket_test_SOURCES = src/descriptionpacket_test.cpp src/descriptionpacket.cpp src/descriptionpacket.h
-tests_descriptionpacket_test_LDADD = libpar2.a
+tests_descriptionpacket_test_LDADD = libpar2.a $(LDADD)
 
 tests_criticalpacket_test_SOURCES = src/criticalpacket_test.cpp src/criticalpacket.cpp src/criticalpacket.h
-tests_criticalpacket_test_LDADD = libpar2.a
+tests_criticalpacket_test_LDADD = libpar2.a $(LDADD)
 
 tests_reedsolomon_test_SOURCES = src/reedsolomon_test.cpp src/reedsolomon.cpp src/reedsolomon.h
 
