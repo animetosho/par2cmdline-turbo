@@ -1,0 +1,30 @@
+name: Build release tarball
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-tarball:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: |
+          ./automake.sh
+          ./configure
+          make dist
+          version=$(ls -1 par2cmdline*.tar.gz | tail -n1 | sed -e 's/par2cmdline-turbo-\([0-9\.]\+\)\.tar\.gz/\1/')
+          zcat par2cmdline-turbo-$version.tar.gz | xz -9 > par2cmdline.tar.xz
+          echo "BINVER=$version" >> $GITHUB_ENV
+      - uses: sekwah41/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }} 
+          asset_path: ./par2cmdline.tar.xz
+          asset_name: par2cmdline-turbo-${{ env.BINVER }}.tar.xz
+          asset_content_type: application/octet-stream

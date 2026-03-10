@@ -66,7 +66,7 @@ CommandLine::CommandLine(void)
 
 void CommandLine::showversion(void)
 {
-  std::string version = X_PACKAGE " version " X_VERSION;
+  std::string version = PACKAGE " version " VERSION;
   std::cout << version << std::endl;
 }
 
@@ -214,7 +214,7 @@ bool CommandLine::ReadArgs(int argc, const char * const *argv)
       else if (argv[0] == std::string("-VV"))
       {
 	showversion();
-	std::cout << "A " PACKAGE " version " VERSION " fork, using a ParPar processing backend" << std::endl << std::endl;
+	std::cout << "A " BASE_PACKAGE " version " BASE_VERSION " fork, using a ParPar processing backend" << std::endl << std::endl;
 	banner();
 	return true;
       }

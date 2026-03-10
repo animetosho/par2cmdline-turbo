@@ -136,11 +136,11 @@
 # endif
 #endif
 
-/* Forked package name */
-#undef X_PACKAGE
+/* Upstream package name */
+#undef BASE_PACKAGE
 
-/* Forked package version */
-#undef X_VERSION
+/* Upstream package version */
+#undef BASE_VERSION
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
