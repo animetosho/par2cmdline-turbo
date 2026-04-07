@@ -21,7 +21,6 @@
 // iostream is included here, so that cout and cerr are not used elsewhere.
 #include<iostream>
 #include<algorithm>
-#include<fstream>  // Added for @filelist support
 #include "commandline.h"
 
 
@@ -859,50 +858,21 @@ bool CommandLine::ReadArgs(int argc, const char * const *argv)
       }
       else
       {
-        // Added @filelist support here
-        if (argv[0][0] == '@')
-        {
-          std::string listfilename = &argv[0][1];
-          std::ifstream listfile(listfilename);
-          if (listfile.is_open())
-          {
-            std::string line;
-            while (std::getline(listfile, line))
-            {
-              // Basic cleanup for Windows carriage returns
-              if (!line.empty() && line[line.size() - 1] == '\r')
-                line.erase(line.size() - 1);
-              
-              if (!line.empty())
-              {
-                rawfilenames.push_back(line);
-              }
-            }
-            listfile.close();
-          }
-          else
-          {
-            std::cerr << "Could not open file list: " << listfilename << std::endl;
-            return false;
-          }
-        }
-        else
-        {
-          std::string path;
-          std::string name;
-          DiskFile::SplitFilename(argv[0], path, name);
-          std::unique_ptr< std::list<std::string> > filenames(
-                          DiskFile::FindFiles(path, name, recursive)
-                          );
 
-          std::list<std::string>::iterator fn = filenames->begin();
-          while (fn != filenames->end())
-          {
-            // Convert filename from command line into a full path + filename
-            std::string filename = DiskFile::GetCanonicalPathname(*fn);
-            rawfilenames.push_back(filename);
-            ++fn;
-          }
+        std::string path;
+        std::string name;
+        DiskFile::SplitFilename(argv[0], path, name);
+	std::unique_ptr< std::list<std::string> > filenames(
+						DiskFile::FindFiles(path, name, recursive)
+						);
+
+        std::list<std::string>::iterator fn = filenames->begin();
+        while (fn != filenames->end())
+        {
+          // Convert filename from command line into a full path + filename
+          std::string filename = DiskFile::GetCanonicalPathname(*fn);
+          rawfilenames.push_back(filename);
+          ++fn;
         }
 
         // delete filenames;   Taken care of by unique_ptr<>
