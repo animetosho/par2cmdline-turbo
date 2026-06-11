@@ -25,7 +25,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.62)
 AC_INIT([par2cmdline-turbo], [1.4.0])
 AC_DEFINE([BASE_PACKAGE], ["par2cmdline"], [Upstream package name])
-AC_DEFINE([BASE_VERSION], ["1.1.1"], [Upstream package version])
+AC_DEFINE([BASE_VERSION], ["1.2.0"], [Upstream package version])
 
 AC_CONFIG_SRCDIR([src/par2cmdline.cpp])
 
@@ -172,6 +172,5 @@ AX_CHECK_LINK_FLAG([-latomic])
 AM_CONDITIONAL([HAS_LIBATOMIC], [test x$ax_cv_check_ldflags___latomic = xyes])
 AM_COND_IF([HAS_LIBATOMIC], [AC_SUBST(LDFLAGS_LIBATOMIC, "-latomic")])
 
-AC_CONFIG_FILES([stamp-h], [echo timestamp > stamp-h])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

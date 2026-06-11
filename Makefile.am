@@ -330,7 +330,7 @@ LDADD = -lstdc++ $(PTHREAD_LIBS) $(LDFLAGS_LIBATOMIC)
 AM_CPPFLAGS = -Wall -DNDEBUG -DPARPAR_ENABLE_HASHER_MD5CRC -DPARPAR_INVERT_SUPPORT -DPARPAR_SLIM_GF16
 AM_CXXFLAGS = -std=c++14 $(PTHREAD_CFLAGS)
 
-EXTRA_DIST = ROADMAP \
+EXTRA_DIST = \
 			 man/par2.1 \
 			 automake.sh \
 			 tests/flatdata.tar.gz \
@@ -347,6 +347,12 @@ EXTRA_DIST = ROADMAP \
 			 tests/bug44.tar.gz \
 			 tests/bug128-parfiles.tar.gz \
 			 tests/bug190.tar.gz \
+	tests/block-count-wrap.tar.gz \
+	tests/generate-block-count-wrap-fixture.py \
+	tests/flatdata-filelist.txt \
+	tests/subdirdata-filelist.txt \
+	tests/subdirdata-partial-filelist.txt \
+	tests/subdirdata-folder-filelist.txt \
 			 tests/testfuncs.ps1 \
 			 tests/build_unit_tests.ps1 \
 			 tests/run_tests.ps1 \
@@ -422,6 +428,22 @@ EXTRA_DIST = ROADMAP \
 			 tests/test34.ps1 \
 			 tests/test35 \
 			 tests/test35.ps1 \
+	tests/test36 \
+	tests/test36.ps1 \
+	tests/test37 \
+	tests/test37.ps1 \
+	tests/test38 \
+	tests/test38.ps1 \
+	tests/test39 \
+	tests/test39.ps1 \
+	tests/test40 \
+	tests/test40.ps1 \
+	tests/test41 \
+	tests/test41.ps1 \
+	tests/test42 \
+	tests/test42.ps1 \
+	tests/test43 \
+	tests/test44 \
 			 tests/unit_tests \
 			 tests/unit_tests.ps1
 
@@ -463,7 +485,8 @@ tests_utf8_test_SOURCES = src/utf8_test.cpp src/utf8.cpp src/utf8.h
 # List of all tests.
 # tests/test* are integration tests that use the binary.
 # $(check_PROGRAMS) is the list of compiled unit tests.
-TESTS = tests/test1 \
+TESTS = \
+	tests/test1 \
 		tests/test2 \
 		tests/test3 \
 		tests/test4 \
@@ -499,6 +522,15 @@ TESTS = tests/test1 \
 		tests/test33 \
 		tests/test34 \
 		tests/test35 \
+	tests/test36 \
+	tests/test37 \
+	tests/test38 \
+	tests/test39 \
+	tests/test40 \
+	tests/test41 \
+	tests/test42 \
+	tests/test43 \
+	tests/test44 \
 		tests/utf8_test \
 		tests/unit_tests
 

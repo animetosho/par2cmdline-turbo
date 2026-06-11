@@ -2,8 +2,6 @@
 
 execdir="$PWD"
 
-# valgrind tests memory usage.
-# wine allow for windows testing on linux
 if [ -n "${PARVALGRINDOPTS+set}" ]
 then
     PARBINARY="valgrind $PARVALGRINDOPTS $execdir/par2"
@@ -13,7 +11,6 @@ then
 else
     PARBINARY="$execdir/par2"
 fi
-
 
 if [ -z "$srcdir" ] || [ "." = "$srcdir" ]; then
   srcdir="$PWD"
@@ -31,17 +28,31 @@ rm -rf "run$testname"
 
 mkdir "run$testname" && cd "run$testname" || { echo "ERROR: Could not change to test directory" ; exit 1; } >&2
 
-tar -xzf "$TESTDATA/flatdata.tar.gz" || { echo "ERROR: Could not extract data test files" ; exit 1; } >&2
-tar -xzf "$TESTDATA/flatdata-par2files.tar.gz" || { echo "ERROR: Could not extract par test files" ; exit 1; } >&2
-
-banner="Verifying using PAR 2.0 data"
+banner="Rejecting oversized PAR2 source block counts"
 dashes=`echo "$banner" | sed s/./-/g`
 
 echo $dashes
 echo $banner
 echo $dashes
 
-$PARBINARY v -a testdata.par2 || { echo "ERROR: Initial PAR 2.0 verification failed" ; exit 1; } >&2
+tar -xzf "$TESTDATA/block-count-wrap.tar.gz" || { echo "ERROR: Could not extract PAR2 test file" ; exit 1; } >&2
+
+$PARBINARY r -q recovery.par2 >repair.out 2>repair.err
+result=$?
+
+if [ $result -eq 0 ]
+then
+    echo "ERROR: Repair accepted oversized source block counts" >&2
+    exit 1
+fi
+
+if [ $result -gt 128 ]
+then
+    echo "ERROR: Repair terminated by signal instead of rejecting malformed PAR2 data" >&2
+    exit 1
+fi
+
+grep -q "Too many source blocks in recovery set" repair.err || { echo "ERROR: Expected oversized block count rejection" ; exit 1; } >&2
 
 cd "$TESTROOT"
 rm -rf "run$testname"
