@@ -240,6 +240,8 @@ inline bool ReedSolomon<g>::Compute(NoiseLevel noiselevel, std::ostream &sout, s
   if (noiselevel > nlQuiet)
     sout << "Computing Reed Solomon matrix." << std::endl;
 
+  ProgressMeter<u32> progress(sout, "Constructing: ", datamissing+parmissing);
+
   /*  Layout of RS Matrix:
       NOTE: The second set of columns represents the parity vectors present,
       but this only uses datamissing of them.  Otherwise, it is over constrained.
@@ -278,14 +280,8 @@ inline bool ReedSolomon<g>::Compute(NoiseLevel noiselevel, std::ostream &sout, s
   // One row for each present recovery block that will be used for a missing data block
   for (unsigned int row=0; row<datamissing; row++)
   {
-    // Define MPDL to skip reporting and speed things up
-#ifndef MPDL
     if (noiselevel > nlQuiet)
-    {
-      int progress = row * 1000 / (datamissing+parmissing);
-      sout << "Constructing: " << progress/10 << '.' << progress%10 << "%\r" << std::flush;
-    }
-#endif
+      progress.Update(row);
 
     // Get the exponent of the next present recovery block
     while (!outputrow->present)
@@ -325,14 +321,8 @@ inline bool ReedSolomon<g>::Compute(NoiseLevel noiselevel, std::ostream &sout, s
   outputrow = outputrows.begin();
   for (unsigned int row=0; row<parmissing; row++)
   {
-    // Define MPDL to skip reporting and speed things up
-#ifndef MPDL
     if (noiselevel > nlQuiet)
-    {
-      int progress = (row+datamissing) * 1000 / (datamissing+parmissing);
-      sout << "Constructing: " << progress/10 << '.' << progress%10 << "%\r" << std::flush;
-    }
-#endif
+      progress.Update(row+datamissing);
 
     // Get the exponent of the next missing recovery block
     while (outputrow->present)
@@ -407,10 +397,11 @@ inline bool ReedSolomon<g>::GaussElim(NoiseLevel noiselevel, std::ostream &sout,
              << (unsigned int)rightmatrix[row*rows+col];
       }
       sout << ((row==0) ? " \\"   : (row==rows-1) ? " /"    : " | |");
-      sout << std::endl;
+      sout << '\n';
 
       sout << std::dec << std::setw(0) << std::setfill(' ');
     }
+    sout << std::flush;
   }
 
   // Because the matrices being operated on are Vandermonde matrices
@@ -422,7 +413,7 @@ inline bool ReedSolomon<g>::GaussElim(NoiseLevel noiselevel, std::ostream &sout,
 
   // Solve one row at a time
 
-  int progress = 0;
+  ProgressMeter<u32> progress(sout, "Solving: ", datamissing*rows);
 
   // For each row in the matrix
   for (unsigned int row=0; row<datamissing; row++)
@@ -462,18 +453,8 @@ inline bool ReedSolomon<g>::GaussElim(NoiseLevel noiselevel, std::ostream &sout,
     // For every other row in the matrix
     for (unsigned int row2=0; row2<rows; row2++)
     {
-      // Define MPDL to skip reporting and speed things up
-#ifndef MPDL
       if (noiselevel > nlQuiet)
-      {
-        int newprogress = (row*rows+row2) * 1000 / (datamissing*rows);
-        if (progress != newprogress)
-        {
-          progress = newprogress;
-          sout << "Solving: " << progress/10 << '.' << progress%10 << "%\r" << std::flush;
-        }
-      }
-#endif
+        progress.Update(row*rows+row2);
 
       if (row != row2)
       {
@@ -542,10 +523,11 @@ inline bool ReedSolomon<g>::GaussElim(NoiseLevel noiselevel, std::ostream &sout,
              << (unsigned int)rightmatrix[row*rows+col];
       }
       sout << ((row==0) ? " \\"   : (row==rows-1) ? " /"    : " | |");
-      sout << std::endl;
+      sout << '\n';
 
       sout << std::dec << std::setw(0) << std::setfill(' ');
     }
+    sout << std::flush;
   }
 
   return true;

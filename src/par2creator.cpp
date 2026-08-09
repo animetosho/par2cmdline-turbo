@@ -60,11 +60,8 @@ Par2Creator::Par2Creator(std::ostream &sout, std::ostream &serr, const NoiseLeve
 , recoverypackets()
 , criticalpackets()
 , criticalpacketentries()
-, progress(0)
-, totaldata(0)
 
 , deferhashcomputation(false)
-, mttotalsize(0)
 {
   setup_hasher();
 }
@@ -152,19 +149,19 @@ Result Par2Creator::Process(
   if (noiselevel > nlQuiet)
   {
     // Display information.
-    sout << "Block size: " << blocksize << std::endl;
-    sout << "Source file count: " << sourcefilecount << std::endl;
-    sout << "Source block count: " << sourceblockcount << std::endl;
-    sout << "Recovery block count: " << recoveryblockcount << std::endl;
-    sout << "Recovery file count: " << recoveryfilecount << std::endl;
+    sout << "Block size: " << blocksize << "\n"
+      "Source file count: " << sourcefilecount << "\n"
+      "Source block count: " << sourceblockcount << "\n"
+      "Recovery block count: " << recoveryblockcount << "\n"
+      "Recovery file count: " << recoveryfilecount << "\n";
     if (noiselevel >= nlNoisy)
     {
-      sout << "Data hash method: " << hasherInput_methodName() << std::endl;
-      sout << "Multiply method: " << parparcpu.getMethodName() << std::endl;
+      sout << "Data hash method: " << hasherInput_methodName()
+        << "\nMultiply method: " << parparcpu.getMethodName() << '\n';
       if (noiselevel >= nlDebug)
       {
-        sout << "[DEBUG] Compute tile size: " << parparcpu.getChunkLen() << std::endl;
-        sout << "[DEBUG] Compute block grouping: " << parparcpu.getInputBatchSize() << std::endl;
+        sout << "[DEBUG] Compute tile size: " << parparcpu.getChunkLen()
+          << "\n[DEBUG] Compute block grouping: " << parparcpu.getInputBatchSize() << '\n';
       }
     }
     sout << std::endl;
@@ -205,8 +202,7 @@ Result Par2Creator::Process(
       return eMemoryError;
 
     // Set the total amount of data to be processed.
-    progress = 0;
-    totaldata = blocksize * sourceblockcount;
+    ProgressMeter<u64> progress(sout, "Processing: ", blocksize * sourceblockcount);
 
     // Start at an offset of 0 within a block.
     u64 blockoffset = 0;
@@ -218,7 +214,7 @@ Result Par2Creator::Process(
         return eMemoryError;
 
       // Read source data, process it through the RS matrix and write it to disk.
-      if (!ProcessData(blockoffset, blocklength))
+      if (!ProcessData(blockoffset, blocklength, progress))
         return eFileIOError;
 
       blockoffset += blocklength;
@@ -371,11 +367,13 @@ bool Par2Creator::CalculateProcessBlockSize(size_t memorylimit)
 bool Par2Creator::OpenSourceFiles(const std::vector<std::string> &extrafiles, std::string basepath)
 {
   std::atomic<bool> openfailed(false);
-  std::atomic<u64> totalprogress(0);
 
   //Total size of files for mt-progress line
+  u64 mttotalsize = 0;
   for (size_t i=0; i<extrafiles.size(); ++i)
     mttotalsize += DiskFile::GetFileSize(extrafiles[i]);
+
+  ProgressMeter<u64> progress(sout, "", mttotalsize);
 
   std::mutex packet_lock;
   foreach_parallel<std::string>(extrafiles, Par2Creator::GetFileThreads(), [&, this](const std::string& extrafile) {
@@ -391,7 +389,7 @@ bool Par2Creator::OpenSourceFiles(const std::vector<std::string> &extrafiles, st
     }
 
     // Open the source file and compute its Hashes and CRCs.
-    if (!sourcefile->Open(noiselevel, sout, serr, extrafile, blocksize, deferhashcomputation, basepath, mttotalsize, totalprogress, output_lock))
+    if (!sourcefile->Open(noiselevel, sout, serr, extrafile, blocksize, deferhashcomputation, basepath, progress, output_lock))
     {
       delete sourcefile;
       openfailed.store(true, std::memory_order_relaxed);
@@ -758,7 +756,7 @@ bool Par2Creator::AllocateBuffers(void)
 }
 
 // Read source data, process it through the RS matrix and write it to disk.
-bool Par2Creator::ProcessData(u64 blockoffset, size_t blocklength)
+bool Par2Creator::ProcessData(u64 blockoffset, size_t blocklength, ProgressMeter<u64> &progress)
 {
   // If we have deferred computation of the file hash and block crc and hashes
   // sourcefile and sourceindex will be used to update them during
@@ -830,17 +828,7 @@ bool Par2Creator::ProcessData(u64 blockoffset, size_t blocklength)
     }
 
     if (noiselevel > nlQuiet)
-    {
-      // Update a progress indicator
-      u32 oldfraction = (u32)(1000 * progress / totaldata);
-      progress += blocklength;
-      u32 newfraction = (u32)(1000 * progress / totaldata);
-
-      if (oldfraction != newfraction)
-      {
-        sout << "Processing: " << newfraction/10 << '.' << newfraction%10 << "%\r" << std::flush;
-      }
-    }
+      progress.Add(blocklength);
 
     // Work out which source file the next block belongs to
     if (++sourceindex >= (*sourcefile)->BlockCount())

@@ -54,8 +54,6 @@ Par1Repairer::Par1Repairer(std::ostream &sout, std::ostream &serr, const NoiseLe
 , inputblocks()
 , outputblocks()
 , rs()
-, progress(0)
-, totaldata(0)
 , inputbuffersize(0)
 , inputbuffer(0)
 , outputbufferalignment(0)
@@ -129,7 +127,7 @@ Result Par1Repairer::Process(const size_t memorylimit,
     return eLogicError;
 
   if (noiselevel > nlQuiet)
-    sout << std::endl << "Verifying source files:" << std::endl << std::endl;
+    sout << "\nVerifying source files:\n" << std::endl;
 
   // Check for the existence of and verify each of the source files
   if (!VerifySourceFiles())
@@ -138,7 +136,7 @@ Result Par1Repairer::Process(const size_t memorylimit,
   if (completefilecount<sourcefiles.size())
   {
     if (noiselevel > nlQuiet)
-      sout << std::endl << "Scanning extra files:" << std::endl << std::endl;
+      sout << "\nScanning extra files:\n" << std::endl;
 
     // Check any other files specified on the command line to see if they are
     // actually copies of the source files that have the wrong filename
@@ -150,7 +148,7 @@ Result Par1Repairer::Process(const size_t memorylimit,
   UpdateVerificationResults();
 
   if (noiselevel > nlSilent)
-    sout << std::endl;
+    sout << '\n';
 
   // Check the verification results and report the details
   if (!CheckVerificationResults())
@@ -163,7 +161,7 @@ Result Par1Repairer::Process(const size_t memorylimit,
     if (dorepair)
     {
       if (noiselevel > nlSilent)
-        sout << std::endl;
+        sout << '\n';
 
       // Rename any damaged or missnamed target files.
       if (!RenameTargetFiles())
@@ -194,11 +192,10 @@ Result Par1Repairer::Process(const size_t memorylimit,
           return eMemoryError;
         }
         if (noiselevel > nlSilent)
-          sout << std::endl;
+          sout << '\n';
 
         // Set the total amount of data to be processed.
-        progress = 0;
-        totaldata = blocksize * sourcefiles.size() * verifylist.size();
+        ProgressMeter<u64> progress(sout, "Repairing: ", blocksize * sourcefiles.size() * verifylist.size());
 
         // Start at an offset of 0 within a block.
         u64 blockoffset = 0;
@@ -208,7 +205,7 @@ Result Par1Repairer::Process(const size_t memorylimit,
           size_t blocklength = (size_t)std::min((u64)chunksize, blocksize-blockoffset);
 
           // Read source data, process it through the RS matrix and write it to disk.
-          if (!ProcessData(blockoffset, blocklength))
+          if (!ProcessData(blockoffset, blocklength, progress))
           {
             // Delete all of the partly reconstructed files
             DeleteIncompleteTargetFiles();
@@ -220,7 +217,7 @@ Result Par1Repairer::Process(const size_t memorylimit,
         }
 
         if (noiselevel > nlSilent)
-          sout << std::endl << "Verifying repaired files:" << std::endl << std::endl;
+          sout << "\nVerifying repaired files:\n" << std::endl;
 
         // Verify that all of the reconstructed target files are now correct
         if (!VerifyTargetFiles())
@@ -240,7 +237,7 @@ Result Par1Repairer::Process(const size_t memorylimit,
       else
       {
         if (noiselevel > nlSilent)
-          sout << std::endl << "Repair complete." << std::endl;
+          sout << "\nRepair complete." << std::endl;
       }
     }
     else
@@ -804,20 +801,14 @@ bool Par1Repairer::VerifyDataFile(DiskFile *diskfile, Par1RepairerSourceFile *so
       // Compute the MD5 hash of the whole file
       if (filesize > 16384)
       {
-        u64 progress = 0;
         u64 offset = 16384;
+        std::string message = "Scanning: \"";
+        message.append(name).append("\": ");
+        ProgressMeter<u64> progress(sout, message, filesize);
         while (offset < filesize)
         {
           if (noiselevel > nlQuiet)
-          {
-            // Update a progress indicator
-            u32 oldfraction = (u32)(1000 * (progress) / filesize);
-            u32 newfraction = (u32)(1000 * (progress=offset) / filesize);
-            if (oldfraction != newfraction)
-            {
-              sout << "Scanning: \"" << name << "\": " << newfraction/10 << '.' << newfraction%10 << "%\r" << std::flush;
-            }
-          }
+            progress.Update(offset);
 
           want = (size_t)std::min((u64)buffersize, filesize-offset);
 
@@ -1027,8 +1018,8 @@ bool Par1Repairer::CheckVerificationResults(void)
     {
       if (noiselevel > nlSilent)
       {
-        sout << "Repair is not possible." << std::endl;
-        sout << "You need " << damagedfilecount+missingfilecount - recoveryblocks.size()
+        sout << "Repair is not possible.\n"
+             "You need " << damagedfilecount+missingfilecount - recoveryblocks.size()
              << " more recovery files to be able to repair." << std::endl;
       }
 
@@ -1291,7 +1282,7 @@ bool Par1Repairer::AllocateBuffers(size_t memorylimit)
 }
 
 // Read source data, process it through the RS matrix and write it to disk.
-bool Par1Repairer::ProcessData(u64 blockoffset, size_t blocklength)
+bool Par1Repairer::ProcessData(u64 blockoffset, size_t blocklength, ProgressMeter<u64> &progress)
 {
   u64 totalwritten = 0;
   // Clear the output buffer
@@ -1320,17 +1311,7 @@ bool Par1Repairer::ProcessData(u64 blockoffset, size_t blocklength)
         rs.Process(blocklength, inputindex, inputbuffer, outputindex, outbuf);
 
         if (noiselevel > nlQuiet)
-        {
-          // Update a progress indicator
-          u32 oldfraction = (u32)(1000 * progress / totaldata);
-          progress += blocklength;
-          u32 newfraction = (u32)(1000 * progress / totaldata);
-
-          if (oldfraction != newfraction)
-          {
-            sout << "Repairing: " << newfraction/10 << '.' << newfraction%10 << "%\r" << std::flush;
-          }
-        }
+          progress.Add(blocklength);
       }
 
       ++inputblock;
@@ -1448,7 +1429,7 @@ bool Par1Repairer::RemoveBackupFiles(void)
   if (noiselevel > nlSilent
       && bf != backuplist.end())
   {
-    sout << std::endl << "Purge backup files." << std::endl;
+    sout << "\nPurge backup files." << std::endl;
   }
 
   // Iterate through each file in the backuplist
@@ -1477,7 +1458,7 @@ bool Par1Repairer::RemoveParFiles(void)
   if (noiselevel > nlSilent
       && !parlist.empty())
   {
-      sout << std::endl << "Purge par files." << std::endl;
+      sout << "\nPurge par files." << std::endl;
   }
 
   for (std::list<std::string>::const_iterator s=parlist.begin(); s!=parlist.end(); ++s)

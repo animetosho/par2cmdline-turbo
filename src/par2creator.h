@@ -81,7 +81,7 @@ protected:
   bool AllocateBuffers(void);
 
   // Read source data, process it through the RS matrix and write it to disk.
-  bool ProcessData(u64 blockoffset, size_t blocklength);
+  bool ProcessData(u64 blockoffset, size_t blocklength, ProgressMeter<u64> &progress);
 
   // Finish computation of the recovery packets and write the headers to disk.
   bool WriteRecoveryPacketHeaders(void);
@@ -149,14 +149,10 @@ protected:
   PAR2Proc parpar;            // Main ParPar backend
   PAR2ProcCPU parparcpu;      // ParPar CPU sub-backend
 
-  u64 progress;     // How much data has been processed.
-  u64 totaldata;    // Total amount of data to be processed.
-
   bool deferhashcomputation; // If we have enough memory to compute all recovery data
                              // in one pass, then we can defer the computation of
                              // the full file hash and block crc and hashes until
                              // the recovery data is computed.
-  u64 mttotalsize;           // Total size of files for mt-progress line
 };
 
 #endif // __PAR2CREATOR_H__
