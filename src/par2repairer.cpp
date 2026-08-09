@@ -1833,6 +1833,7 @@ bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
       sout << "[DEBUG] duplicates: " << duplicatecount << '\n';
     sout << "[DEBUG] matchcount: " << count << "\n"
       "[DEBUG] ----------------------" << std::endl;
+    }
   }
 
   // Did we make any matches at all
@@ -2363,7 +2364,7 @@ bool Par2Repairer::ComputeRSmatrix(void)
 
   // Set up progress display
   std::function<void(u16, u16)> progressfunc;
-  int progress = 0;
+  std::unique_ptr<ProgressMeter<u32>> progress;
   bool progressStarted = false;
   if (noiselevel > nlQuiet)
   {
@@ -2383,18 +2384,13 @@ bool Par2Repairer::ComputeRSmatrix(void)
           }
         }
         sout << "Constructing: 0.0%\r" << std::flush;
-        progress = 0;
+        progress.reset(new ProgressMeter<u32>(sout, "Solving: ", total));
         return;
       }
       if (done == 1)
         sout << "Constructing: done." << std::endl;
       
-      int newprogress = (done-1) * 1000 / (total-1);
-      if (progress != newprogress)
-      {
-        progress = newprogress;
-        sout << "Solving: " << progress/10 << '.' << progress%10 << "%\r" << std::flush;
-      }
+      progress->Update(done-1);
     };
   }
 
@@ -2404,6 +2400,7 @@ bool Par2Repairer::ComputeRSmatrix(void)
     serr << "RS computation error (this may be fixable with more recovery blocks)." << std::endl;
     return false;
   }
+  progress.reset(nullptr);
 
   if (noiselevel > nlQuiet)
     sout << "Solving: done." << std::endl;
