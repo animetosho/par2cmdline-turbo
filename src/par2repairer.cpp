@@ -272,11 +272,11 @@ Result Par2Repairer::Process(
 
         if (noiselevel >= nlNoisy)
         {
-          sout << "Multiply method: " << parparcpu.getMethodName() << std::endl;
+          sout << "Multiply method: " << parparcpu.getMethodName() << '\n';
           if (noiselevel >= nlDebug)
           {
-            sout << "[DEBUG] Compute tile size: " << parparcpu.getChunkLen() << std::endl;
-            sout << "[DEBUG] Compute block grouping: " << parparcpu.getInputBatchSize() << std::endl;
+            sout << "[DEBUG] Compute tile size: " << parparcpu.getChunkLen()
+              << "\n[DEBUG] Compute block grouping: " << parparcpu.getInputBatchSize() << '\n';
           }
           sout << std::endl;
         }
@@ -2378,8 +2378,8 @@ bool Par2Repairer::ComputeRSmatrix(void)
           progressStarted = true;
           if (noiselevel >= nlNoisy)
           {
-            sout << "Construction accel: " << rs.getPointMulMethodName() << std::endl;
-            sout << "Inversion method: " << Galois16Mul::methodToText((Galois16Methods)rs.regionMethod) << std::endl;
+            sout << "Construction accel: " << rs.getPointMulMethodName()
+              << "\nInversion method: " << Galois16Mul::methodToText((Galois16Methods)rs.regionMethod) << std::endl;
           }
         }
         sout << "Constructing: 0.0%\r" << std::flush;
