@@ -373,7 +373,7 @@ bool Par2Creator::OpenSourceFiles(const std::vector<std::string> &extrafiles, st
   for (size_t i=0; i<extrafiles.size(); ++i)
     mttotalsize += DiskFile::GetFileSize(extrafiles[i]);
 
-  ProgressMeter<u64> progress(sout, "", mttotalsize);
+  MTProgressMeter<u64> progress(sout, "", mttotalsize, output_lock);
 
   std::mutex packet_lock;
   foreach_parallel<std::string>(extrafiles, Par2Creator::GetFileThreads(), [&, this](const std::string& extrafile) {

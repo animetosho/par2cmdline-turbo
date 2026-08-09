@@ -21,6 +21,8 @@
 #define __PROGRESSMETER_H__
 
 #include <chrono>
+#include <atomic>
+#include <mutex>
 
 template<typename TValue>
 class ProgressMeter
@@ -39,11 +41,7 @@ class ProgressMeter
   }
   inline void PrintFraction(u32 fraction)
   {
-    #pragma omp critical(stdio)
     sout << message << fraction/10 << '.' << fraction%10 << "%\r" << std::flush;
-#if defined(_OPENMP) && _OPENMP >= 201107
-    #pragma omp atomic write
-#endif
     printed = steady_clock::now().time_since_epoch().count();
   }
   inline bool ShouldUpdate(TValue oldval, TValue newval, u32 &newfraction) const
@@ -51,12 +49,7 @@ class ProgressMeter
     newfraction = CalcThousandths(newval);
     if (CalcThousandths(oldval) == newfraction)
       return false;
-    steady_clock::duration::rep lastprinted;
-#if defined(_OPENMP) && _OPENMP >= 201107
-    #pragma omp atomic read
-#endif
-    lastprinted = printed;
-    return steady_clock::now() - steady_clock::time_point(steady_clock::duration(lastprinted)) >= std::chrono::milliseconds(50);
+    return steady_clock::now() - steady_clock::time_point(steady_clock::duration(printed)) >= std::chrono::milliseconds(50);
   }
 
 public:
@@ -68,53 +61,80 @@ public:
   // NOTE: Update() doesn't always update current value, so don't mix it with Add()
   void Update(TValue newval)
   {
-    TValue oldval;
-#if defined(_OPENMP) && _OPENMP >= 201107
-    #pragma omp atomic read
-#endif
-    oldval = current;
     u32 newfraction;
-    if (ShouldUpdate(oldval, newval, newfraction))
+    if (ShouldUpdate(current, newval, newfraction))
     {
       PrintFraction(newfraction);
-#if defined(_OPENMP) && _OPENMP >= 201107
-      #pragma omp atomic write
-#endif
       current = newval;
     }
   }
   void Add(TValue amount)
   {
-    TValue newval;
-#if defined(_OPENMP) && _OPENMP >= 201107
-    #pragma omp atomic capture
-    newval = current += amount;
-#else
-    newval = current + amount;
-    #pragma omp atomic
+    TValue oldval = current;
     current += amount;
-#endif
     u32 newfraction;
-    if (ShouldUpdate(newval - amount, newval, newfraction))
+    if (ShouldUpdate(oldval, current, newfraction))
+      PrintFraction(newfraction);
+  }
+};
+
+template<typename TValue>
+class MTProgressMeter
+{
+  using steady_clock = std::chrono::steady_clock;
+
+  std::ostream &sout;
+  const std::string message;
+  const float scale;
+  std::atomic<TValue> current;
+  std::atomic<steady_clock::duration::rep> printed;
+  std::mutex &output_lock;
+
+  inline u32 CalcThousandths(TValue val) const
+  {
+    return (u32)(scale * val);
+  }
+  inline void PrintFraction(u32 fraction)
+  {
+    output_lock.lock();
+    sout << message << fraction/10 << '.' << fraction%10 << "%\r" << std::flush;
+    output_lock.unlock();
+    printed.store(steady_clock::now().time_since_epoch().count(), std::memory_order_relaxed);
+  }
+  inline bool ShouldUpdate(TValue oldval, TValue newval, u32 &newfraction) const
+  {
+    newfraction = CalcThousandths(newval);
+    if (CalcThousandths(oldval) == newfraction)
+      return false;
+    steady_clock::duration::rep lastprinted = printed.load(std::memory_order_relaxed);
+    return steady_clock::now() - steady_clock::time_point(steady_clock::duration(lastprinted)) >= std::chrono::milliseconds(50);
+  }
+
+public:
+  MTProgressMeter(std::ostream &sout, const std::string &message, TValue total, std::mutex &output_lock) :
+    sout(sout), message(message), scale(1000.0f / total), current(0), printed(0), output_lock(output_lock) {}
+  MTProgressMeter(std::ostream &sout, const char *message, TValue total, std::mutex &output_lock) :
+    sout(sout), message(message), scale(1000.0f / total), current(0), printed(0), output_lock(output_lock) {}
+
+  void Add(TValue amount)
+  {
+    TValue oldval = current.fetch_add(amount, std::memory_order_relaxed);
+    u32 newfraction;
+    if (ShouldUpdate(oldval, oldval + amount, newfraction))
       PrintFraction(newfraction);
   }
   inline void AddSilent(TValue amount)
   {
-    #pragma omp atomic
-    current += amount;
+    current.fetch_add(amount, std::memory_order_relaxed);
   }
   void ClearLine()
   {
-    #pragma omp critical(stdio)
+    std::lock_guard<std::mutex> lock(output_lock);
     sout << std::setw(message.size()+6) << std::setfill(' ') << "\r";
   }
   void Print()
   {
-    TValue val;
-#if defined(_OPENMP) && _OPENMP >= 201107
-    #pragma omp atomic read
-#endif
-    val = current;
+    TValue val = current.load(std::memory_order_relaxed);
     PrintFraction(CalcThousandths(val));
   }
 };

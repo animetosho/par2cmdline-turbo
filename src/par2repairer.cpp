@@ -1229,7 +1229,7 @@ bool Par2Repairer::VerifySourceFiles(const std::string& basepath, std::vector<st
   }
 
   std::sort(sortedfiles.begin(), sortedfiles.end(), SortSourceFilesByFileName);
-  ProgressMeter<u64> progress(sout, "Scanning: ", mttotalsize);
+  MTProgressMeter<u64> progress(sout, "Scanning: ", mttotalsize, output_lock);
 
   std::mutex dfm_lock, xfiles_lock;
   
@@ -1339,7 +1339,7 @@ bool Par2Repairer::VerifyExtraFiles(const std::vector<std::string> &extrafiles, 
     for (size_t i=0; i<extrafiles.size(); ++i)
       mttotalextrasize += DiskFile::GetFileSize(extrafiles[i]);
 
-    ProgressMeter<u64> progress(sout, "Scanning: ", mttotalextrasize);
+    MTProgressMeter<u64> progress(sout, "Scanning: ", mttotalextrasize, output_lock);
 
     std::mutex dfm_lock;
     foreach_parallel<std::string>(extrafiles, Par2Repairer::GetFileThreads(), [&, this](const std::string& extrafile) {
@@ -1389,7 +1389,7 @@ bool Par2Repairer::VerifyExtraFiles(const std::vector<std::string> &extrafiles, 
 }
 
 // Attempt to match the data in the DiskFile with the source file
-bool Par2Repairer::VerifyDataFile(DiskFile *diskfile, Par2RepairerSourceFile *sourcefile, const std::string &basepath, ProgressMeter<u64> &progress, const bool renameonly)
+bool Par2Repairer::VerifyDataFile(DiskFile *diskfile, Par2RepairerSourceFile *sourcefile, const std::string &basepath, MTProgressMeter<u64> &progress, const bool renameonly)
 {
   MatchType matchtype; // What type of match was made
   MD5Hash hashfull;    // The MD5 Hash of the whole file
@@ -1568,7 +1568,7 @@ bool Par2Repairer::VerifyDataFile(DiskFile *diskfile, Par2RepairerSourceFile *so
 // found is for a different source file then "sourcefile" is changed accordingly.
 bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
                                 std::string             basepath,     // [in]
-                                ProgressMeter<u64>      &progress,    // [in]
+                                MTProgressMeter<u64>    &progress,    // [in]
                                 const bool              renameonly,   // [in]
                                 Par2RepairerSourceFile* &sourcefile,  // [in/out]
                                 MatchType               &matchtype,   // [out]
@@ -2685,7 +2685,7 @@ bool Par2Repairer::VerifyTargetFiles(const std::string &basepath)
     if (verifylist[i])
       mttotalsize += verifylist[i]->GetDescriptionPacket()->FileSize();
   }
-  ProgressMeter<u64> progress(sout, "Scanning: ", mttotalsize);
+  MTProgressMeter<u64> progress(sout, "Scanning: ", mttotalsize, output_lock);
 
   // Iterate through each file in the verification list
   foreach_parallel<Par2RepairerSourceFile*>(verifylist, Par2Repairer::GetFileThreads(), [&, this](Par2RepairerSourceFile* const& verifyfile) {
