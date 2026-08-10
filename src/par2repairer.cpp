@@ -551,6 +551,8 @@ bool Par2Repairer::LoadPacketsFromFile(std::string filename)
       // Advance to the next packet
       offset += header.length;
     }
+    if (noiselevel > nlQuiet)
+      progress.Update(offset);
 
     delete [] buffer;
   }
@@ -1680,12 +1682,9 @@ bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
     {
       if (lastmatchoffset < filechecksummer.Offset() && noiselevel > nlNormal)
       {
-        progress.ClearLine();
-        output_lock.lock();
-        sout << "No data found between offset " << lastmatchoffset
-          << " and " << filechecksummer.Offset() << '\n';
-        output_lock.unlock();
-        progress.Print();
+        progress.PrintLine((std::ostringstream()
+          << "No data found between offset " << lastmatchoffset
+          << " and " << filechecksummer.Offset()).str());
       }
 
       // Is this the first match
@@ -1805,20 +1804,18 @@ bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
     }
   }
 
-  if (lastmatchoffset < filechecksummer.Offset() && noiselevel > nlNormal)
-  {
-    progress.ClearLine();
-    output_lock.lock();
-    sout << "No data found between offset " << lastmatchoffset
-      << " and " << filechecksummer.Offset() << std::endl;
-    output_lock.unlock();
-    progress.Print();
-  }
-
   if (noiselevel > nlQuiet)
   {
     if (filechecksummer.Offset() == diskfile->FileSize())
-      progress.AddSilent(filechecksummer.Offset() - oldoffset);
+      progress.Add(filechecksummer.Offset() - oldoffset);
+  }
+
+  if (lastmatchoffset < filechecksummer.Offset() && noiselevel > nlNormal)
+  {
+    progress.PrintLine((std::ostringstream()
+      << "No data found between offset " << lastmatchoffset
+      << " and " << filechecksummer.Offset()).str());
+
   }
 
   // Get the Full and 16k hash values of the file
@@ -1826,14 +1823,12 @@ bool Par2Repairer::ScanDataFile(DiskFile                *diskfile,    // [in]
 
   if (noiselevel >= nlDebug)
   {
-    progress.ClearLine();
-    {
-    std::lock_guard<std::mutex> lock(output_lock);
+    std::ostringstream ss;
     if (duplicatecount > 0)
-      sout << "[DEBUG] duplicates: " << duplicatecount << '\n';
-    sout << "[DEBUG] matchcount: " << count << "\n"
-      "[DEBUG] ----------------------" << std::endl;
-    }
+      ss << "[DEBUG] duplicates: " << duplicatecount << '\n';
+    ss << "[DEBUG] matchcount: " << count << "\n"
+      "[DEBUG] ----------------------";
+    progress.PrintLine(ss.str());
   }
 
   // Did we make any matches at all

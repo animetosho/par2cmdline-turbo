@@ -152,6 +152,9 @@
     <ClInclude Include="src\par2repairersourcefile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\progressmeter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\recoverypacket.h">
       <Filter>Header Files</Filter>
     </ClInclude>

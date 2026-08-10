@@ -28,28 +28,37 @@ template<typename TValue>
 class ProgressMeter
 {
   using steady_clock = std::chrono::steady_clock;
+  const std::chrono::milliseconds PRINT_INTERVAL = std::chrono::milliseconds(50);
 
-  std::ostream &sout;
-  const std::string message;
-  const float scale;
-  TValue current;
-  steady_clock::duration::rep printed;
+  std::ostream &sout;        // stream for output (for commandline, this is cout)
+  const std::string message; // message to display alongside percentage
+  const float scale;         // pre-computed multiplier to convert progress value into a percentage*10
+  TValue current;            // last known progress value
+  steady_clock::duration::rep printed; // last time progress was outputted
 
   inline u32 CalcThousandths(TValue val) const
   {
-    return (u32)(scale * val);
+    return (u32)(scale * val + 0.5f);
   }
-  inline void PrintFraction(u32 fraction)
+  inline bool PrintFraction(TValue oldval, TValue newval)
   {
-    sout << message << fraction/10 << '.' << fraction%10 << "%\r" << std::flush;
-    printed = steady_clock::now().time_since_epoch().count();
-  }
-  inline bool ShouldUpdate(TValue oldval, TValue newval, u32 &newfraction) const
-  {
-    newfraction = CalcThousandths(newval);
+    // if the displayed value won't change, don't print
+    u32 newfraction = CalcThousandths(newval);
     if (CalcThousandths(oldval) == newfraction)
       return false;
-    return steady_clock::now() - steady_clock::time_point(steady_clock::duration(printed)) >= std::chrono::milliseconds(50);
+
+    // check if enough time has passed
+    steady_clock::time_point now = steady_clock::now();
+    steady_clock::time_point lastpoint = steady_clock::time_point(steady_clock::duration(printed));
+
+    // if enough time has passed, print the current progress, and update the time record
+    if (now - lastpoint >= PRINT_INTERVAL || newfraction == 1000)
+    {
+      sout << message << newfraction/10 << '.' << newfraction%10 << "%\r" << std::flush;
+      printed = now.time_since_epoch().count();
+      return true;
+    }
+    return false;
   }
 
 public:
@@ -61,20 +70,14 @@ public:
   // NOTE: Update() doesn't always update current value, so don't mix it with Add()
   void Update(TValue newval)
   {
-    u32 newfraction;
-    if (ShouldUpdate(current, newval, newfraction))
-    {
-      PrintFraction(newfraction);
+    if (PrintFraction(current, newval))
       current = newval;
-    }
   }
   void Add(TValue amount)
   {
     TValue oldval = current;
     current += amount;
-    u32 newfraction;
-    if (ShouldUpdate(oldval, current, newfraction))
-      PrintFraction(newfraction);
+    PrintFraction(oldval, current);
   }
 };
 
@@ -82,32 +85,40 @@ template<typename TValue>
 class MTProgressMeter
 {
   using steady_clock = std::chrono::steady_clock;
+  const std::chrono::milliseconds PRINT_INTERVAL = std::chrono::milliseconds(50);
 
-  std::ostream &sout;
-  const std::string message;
-  const float scale;
-  std::atomic<TValue> current;
-  std::atomic<steady_clock::duration::rep> printed;
+  std::ostream &sout;         // stream for output (for commandline, this is cout)
+  const std::string message;  // message to display alongside percentage
+  const float scale;          // pre-computed multiplier to convert progress value into a percentage*10
+  std::atomic<TValue> current; // last known progress value
+  std::atomic<steady_clock::duration::rep> printed; // last time progress was outputted
   std::mutex &output_lock;
 
   inline u32 CalcThousandths(TValue val) const
   {
-    return (u32)(scale * val);
+    return (u32)(scale * val + 0.5f);
   }
-  inline void PrintFraction(u32 fraction)
+  inline bool PrintFraction(TValue oldval, TValue newval)
   {
-    output_lock.lock();
-    sout << message << fraction/10 << '.' << fraction%10 << "%\r" << std::flush;
-    output_lock.unlock();
-    printed.store(steady_clock::now().time_since_epoch().count(), std::memory_order_relaxed);
-  }
-  inline bool ShouldUpdate(TValue oldval, TValue newval, u32 &newfraction) const
-  {
-    newfraction = CalcThousandths(newval);
+    // if the displayed value won't change, don't print
+    u32 newfraction = CalcThousandths(newval);
     if (CalcThousandths(oldval) == newfraction)
       return false;
-    steady_clock::duration::rep lastprinted = printed.load(std::memory_order_relaxed);
-    return steady_clock::now() - steady_clock::time_point(steady_clock::duration(lastprinted)) >= std::chrono::milliseconds(50);
+
+    // check if enough time has passed
+    steady_clock::time_point now = steady_clock::now();
+    steady_clock::time_point lastpoint = steady_clock::time_point(steady_clock::duration(printed.load(std::memory_order_relaxed)));
+
+    // if enough time has passed, print the current progress, and update the time record
+    if (now - lastpoint >= PRINT_INTERVAL || newfraction == 1000)
+    {
+      output_lock.lock();
+      sout << message << newfraction/10 << '.' << newfraction%10 << "%\r" << std::flush;
+      output_lock.unlock();
+      printed.store(now.time_since_epoch().count(), std::memory_order_relaxed);
+      return true;
+    }
+    return false;
   }
 
 public:
@@ -119,23 +130,17 @@ public:
   void Add(TValue amount)
   {
     TValue oldval = current.fetch_add(amount, std::memory_order_relaxed);
-    u32 newfraction;
-    if (ShouldUpdate(oldval, oldval + amount, newfraction))
-      PrintFraction(newfraction);
+    PrintFraction(oldval, oldval + amount);
   }
-  inline void AddSilent(TValue amount)
-  {
-    current.fetch_add(amount, std::memory_order_relaxed);
-  }
-  void ClearLine()
-  {
-    std::lock_guard<std::mutex> lock(output_lock);
-    sout << std::setw(message.size()+6) << std::setfill(' ') << "\r";
-  }
-  void Print()
+  // print a line whilst progress is still running
+  void PrintLine(const std::string &line)
   {
     TValue val = current.load(std::memory_order_relaxed);
-    PrintFraction(CalcThousandths(val));
+    u32 fraction = CalcThousandths(val);
+    std::lock_guard<std::mutex> lock(output_lock);
+    sout << std::setw(message.size()+7) << std::setfill(' ') << "\r"
+      << line << '\n'
+      << message << fraction/10 << '.' << fraction%10 << "%\r" << std::flush;
   }
 };
 

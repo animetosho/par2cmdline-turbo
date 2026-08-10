@@ -807,9 +807,6 @@ bool Par1Repairer::VerifyDataFile(DiskFile *diskfile, Par1RepairerSourceFile *so
         ProgressMeter<u64> progress(sout, message, filesize);
         while (offset < filesize)
         {
-          if (noiselevel > nlQuiet)
-            progress.Update(offset);
-
           want = (size_t)std::min((u64)buffersize, filesize-offset);
 
           if (!diskfile->Read(offset, buffer, want))
@@ -821,6 +818,9 @@ bool Par1Repairer::VerifyDataFile(DiskFile *diskfile, Par1RepairerSourceFile *so
           contextfull.Update(buffer, want);
 
           offset += want;
+
+          if (noiselevel > nlQuiet)
+            progress.Update(offset);
         }
       }
 
