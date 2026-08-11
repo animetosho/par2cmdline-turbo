@@ -158,20 +158,20 @@ jobs:
     - name: Download slices
       uses: actions/download-artifact@v7
       with:
-        pattern: par2cmdline-macos-*
+        pattern: par2cmdline-turbo-macos-*
 
     - name: Create universal binary
       run: |
         lipo -create \
-          par2cmdline-macos-amd64/par2 \
-          par2cmdline-macos-arm64/par2 \
+          par2cmdline-turbo-macos-amd64/par2 \
+          par2cmdline-turbo-macos-arm64/par2 \
           -output par2
         lipo -info par2
 
     - name: Upload binary artifact
       uses: actions/upload-artifact@v7
       with:
-        name: par2cmdline-macos-universal
+        name: par2cmdline-turbo-macos-universal
         path: |
           par2
         retention-days: 5
