@@ -153,24 +153,11 @@ bool FileCheckSummer::Jump(u64 distance)
   outpointer = buffer;
   inpointer = &buffer[blocksize];
 
-  // If we already have a block of data available, we can compute the hash whilst waiting for the Fill operation
-  if (keep >= blocksize && distance == blocksize)
-  {
-    std::future<void> asynchash = std::async(std::launch::async, [this]() {
-      ComputeCurrentChecksum(true);
-    });
-    bool success = Fill();
-    asynchash.get();
-    return success;
-  }
-  else
-  {
-    if (!Fill())
-      return false;
-    
-    // If we're advancing by a whole block, we'll assume the next block is likely to be valid, so compute the MD5 in advance
-    ComputeCurrentChecksum(distance == blocksize);
-  }
+  if (!Fill())
+    return false;
+
+  // If we're advancing by a whole block, we'll assume the next block is likely to be valid, so compute the MD5 in advance
+  ComputeCurrentChecksum(distance == blocksize);
 
   return true;
 }
