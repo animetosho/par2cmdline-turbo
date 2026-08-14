@@ -21,7 +21,7 @@ extern "C" {
 # endif
 # include "x86_jit.h"
 struct GF16CpuCap {
-	bool hasSSE2, hasSSSE3, hasAVX, hasAVX2, hasAVX512VLBW, hasAVX512VBMI, hasGFNI, hasAVX10;
+	bool hasSSE2, hasSSSE3, hasAVX, hasAVX2, hasAVX512VLBW, hasAVX512VBMI, hasGFNI, hasBMM;
 	size_t propPrefShuffleThresh;
 	bool propFastJit, propHT;
 	bool canMemWX, isEmulated;
@@ -34,7 +34,7 @@ struct GF16CpuCap {
 	  hasAVX512VLBW(true),
 	  hasAVX512VBMI(true),
 	  hasGFNI(true),
-	  hasAVX10(true),
+	  hasBMM(true),
 	  propPrefShuffleThresh(0),
 	  propFastJit(false),
 	  propHT(false),
@@ -104,7 +104,7 @@ struct GF16CpuCap {
 			|| family == 0xaf // AMD Zen3/4 family
 		);
 		
-		hasAVX = false; hasAVX2 = false; hasAVX512VLBW = false; hasAVX512VBMI = false; hasGFNI = false; hasAVX10 = false;
+		hasAVX = false; hasAVX2 = false; hasAVX512VLBW = false; hasAVX512VBMI = false; hasGFNI = false; hasBMM = false;
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
 		_cpuidX(cpuInfoX, 7, 0);
 		if((cpuInfo[2] & 0x1C000000) == 0x1C000000) { // has AVX + OSXSAVE + XSAVE
@@ -116,18 +116,17 @@ struct GF16CpuCap {
 					// checks AVX512BW + AVX512VL + AVX512F
 					hasAVX512VLBW = ((cpuInfoX[1] & 0xC0010000) == 0xC0010000);
 					hasAVX512VBMI = ((cpuInfoX[2] & 2) == 2 && hasAVX512VLBW);
-					
-					int cpuInfo2[4];
-					_cpuidX(cpuInfo2, 7, 1);
-					if(cpuInfo2[3] & 0x80000) {
-						_cpuidX(cpuInfo2, 0x24, 0);
-						hasAVX10 = (cpuInfo2[1] & 0xff) >= 1 /* minimum AVX10.1 */ && cpuInfo2[1] & 0x20000; // AVX10/256
-					}
 				}
 			}
 		}
 		hasGFNI = (cpuInfoX[2] & 0x100) == 0x100;
 #endif
+		
+		_cpuid(cpuInfo, 0x80000000);
+		if((unsigned)cpuInfo[0] >= 0x80000021) {
+			_cpuid(cpuInfo, 0x80000021);
+			hasBMM = (cpuInfo[1] & 0x800000);
+		}
 		
 		_cpuid(cpuInfo, 0);
 		isEmulated = (
@@ -358,14 +357,6 @@ Galois16MethodInfo Galois16Mul::info(Galois16Methods _method) {
 			#endif
 		break;
 		
-		case GF16_AFFINE_AVX10:
-			_info.alignment = 32;
-			_info.stride = 64;
-			#ifdef PLATFORM_AMD64
-			_info.idealInputMultiple = 6;
-			#endif
-		break;
-		
 		case GF16_AFFINE_AVX2:
 			_info.alignment = 32;
 			_info.stride = 64;
@@ -392,16 +383,6 @@ Galois16MethodInfo Galois16Mul::info(Galois16Methods _method) {
 			#endif
 		break;
 		
-		case GF16_AFFINE2X_AVX10:
-			_info.alignment = 32;
-			_info.stride = 32;
-			#ifdef PLATFORM_AMD64
-			_info.idealInputMultiple = 12;
-			#else
-			_info.idealInputMultiple = 2;
-			#endif
-		break;
-		
 		case GF16_AFFINE2X_AVX2:
 			_info.alignment = 32;
 			_info.stride = 32;
@@ -419,6 +400,16 @@ Galois16MethodInfo Galois16Mul::info(Galois16Methods _method) {
 			_info.idealInputMultiple = 6;
 			#else
 			_info.idealInputMultiple = 2;
+			#endif
+		break;
+		
+		case GF16_AFFINE_BMM:
+			_info.alignment = 64;
+			_info.stride = 64;
+			#ifdef PLATFORM_AMD64
+			_info.idealInputMultiple = 12;
+			#else
+			_info.idealInputMultiple = 6;
 			#endif
 		break;
 		
@@ -502,12 +493,11 @@ Galois16MethodInfo Galois16Mul::info(Galois16Methods _method) {
 		break;
 		case GF16_AFFINE_AVX2:
 		case GF16_AFFINE2X_AVX2:
-		case GF16_AFFINE_AVX10:
-		case GF16_AFFINE2X_AVX10:
 			_info.idealChunkSize = 4*1024; // completely untested
 		break;
 		case GF16_AFFINE_AVX512:
 		case GF16_AFFINE2X_AVX512:
+		case GF16_AFFINE_BMM:
 			_info.idealChunkSize = 4*1024;
 		break;
 		case GF16_CLMUL_NEON: // faster init than Shuffle, and usually faster
@@ -1041,38 +1031,6 @@ void Galois16Mul::setupMethod(Galois16Methods _method) {
 			SET_FOR_INVERT(replace_word, gf16_shuffle64_replace_word);
 		break;
 		
-		case GF16_AFFINE_AVX10:
-			scratch = gf16_affine_init_avx2(GF16_POLYNOMIAL);
-			METHOD_REQUIRES(gf16_affine_available_avx10 && gf16_shuffle_available_avx2, 1)
-			SET_FOR_INVERT(_mul, gf16_affine_mul_avx2);
-			_mul_add = &gf16_affine_muladd_avx10;
-			_mul_add_pf = &gf16_affine_muladd_prefetch_avx10;
-			SET_BASIC_OP(add_multi, gf_add_multi_avx2);
-			#ifdef PLATFORM_AMD64
-			SET_FOR_INVERT(_mul_add_multi, gf16_affine_muladd_multi_avx10);
-			SET_FOR_INVERT(_mul_add_multi_stridepf, gf16_affine_muladd_multi_stridepf_avx10);
-			_mul_add_multi_packed = &gf16_affine_muladd_multi_packed_avx10;
-			_mul_add_multi_packpf = &gf16_affine_muladd_multi_packpf_avx10;
-			SET_BASIC_OP(add_multi_packed, gf_add_multi_packed_v2i6_avx10);
-			add_multi_packpf = &gf_add_multi_packpf_v2i6_avx10;
-			#else
-			SET_BASIC_OP(add_multi_packed, gf_add_multi_packed_v2i1_avx2);
-			add_multi_packpf = &gf_add_multi_packpf_v2i1_avx2;
-			#endif
-			SET_FOR_INVERT(prepare, gf16_shuffle_prepare_avx2);
-			SET_BASIC_OP(prepare_packed, gf16_affine_prepare_packed_avx10);
-			prepare_packed_cksum = &gf16_affine_prepare_packed_cksum_avx10;
-			prepare_partial_packsum = &gf16_affine_prepare_partial_packsum_avx10;
-			SET_FOR_INVERT(finish, gf16_shuffle_finish_avx2);
-			SET_BASIC_OP(finish_packed, gf16_shuffle_finish_packed_avx2);
-			finish_packed_cksum = &gf16_shuffle_finish_packed_cksum_avx2;
-			finish_partial_packsum = &gf16_shuffle_finish_partial_packsum_avx2;
-			SET_FOR_OPENCL(copy_cksum, gf16_cksum_copy_avx2);
-			SET_FOR_OPENCL(copy_cksum_check, gf16_cksum_copy_check_avx2);
-			SET_FOR_OPENCL(finish_grp2_cksum, gf16_grp2_finish_avx2);
-			SET_FOR_INVERT(replace_word, gf16_shuffle32_replace_word);
-		break;
-		
 		case GF16_AFFINE_AVX2:
 			scratch = gf16_affine_init_avx2(GF16_POLYNOMIAL);
 			METHOD_REQUIRES(gf16_affine_available_avx2 && gf16_shuffle_available_avx2, 1)
@@ -1168,37 +1126,6 @@ void Galois16Mul::setupMethod(Galois16Methods _method) {
 			SET_FOR_INVERT(replace_word, gf16_affine2x_replace_word);
 		break;
 		
-		case GF16_AFFINE2X_AVX10:
-			scratch = gf16_affine_init_avx2(GF16_POLYNOMIAL);
-			METHOD_REQUIRES(gf16_affine_available_avx10 && gf16_shuffle_available_avx2, 1)
-			SET_FOR_INVERT(_mul, gf16_affine2x_mul_avx2);
-			_mul_add = &gf16_affine2x_muladd_avx10;
-			SET_FOR_INVERT(_mul_add_multi, gf16_affine2x_muladd_multi_avx10);
-			SET_FOR_INVERT(_mul_add_multi_stridepf, gf16_affine2x_muladd_multi_stridepf_avx10);
-			_mul_add_multi_packed = &gf16_affine2x_muladd_multi_packed_avx10;
-			_mul_add_multi_packpf = &gf16_affine2x_muladd_multi_packpf_avx10;
-			SET_BASIC_OP(add_multi, gf_add_multi_avx2);
-			#ifdef PLATFORM_AMD64
-			SET_BASIC_OP(add_multi_packed, gf_add_multi_packed_v1i12_avx10);
-			add_multi_packpf = &gf_add_multi_packpf_v1i12_avx10;
-			#else
-			SET_BASIC_OP(add_multi_packed, gf_add_multi_packed_v1i2_avx2);
-			add_multi_packpf = &gf_add_multi_packpf_v1i2_avx2;
-			#endif
-			SET_FOR_INVERT(prepare, gf16_affine2x_prepare_avx2);
-			SET_BASIC_OP(prepare_packed, gf16_affine2x_prepare_packed_avx10);
-			prepare_packed_cksum = &gf16_affine2x_prepare_packed_cksum_avx10;
-			prepare_partial_packsum = &gf16_affine2x_prepare_partial_packsum_avx10;
-			SET_FOR_INVERT(finish, gf16_affine2x_finish_avx2);
-			SET_BASIC_OP(finish_packed, gf16_affine2x_finish_packed_avx2);
-			finish_packed_cksum = &gf16_affine2x_finish_packed_cksum_avx2;
-			finish_partial_packsum = &gf16_affine2x_finish_partial_packsum_avx2;
-			SET_FOR_OPENCL(copy_cksum, gf16_cksum_copy_avx2);
-			SET_FOR_OPENCL(copy_cksum_check, gf16_cksum_copy_check_avx2);
-			SET_FOR_OPENCL(finish_grp2_cksum, gf16_grp2_finish_avx2);
-			SET_FOR_INVERT(replace_word, gf16_affine2x_replace_word);
-		break;
-		
 		case GF16_AFFINE2X_AVX2:
 			scratch = gf16_affine_init_avx2(GF16_POLYNOMIAL);
 			METHOD_REQUIRES(gf16_affine_available_avx2 && gf16_shuffle_available_avx2, 1)
@@ -1259,6 +1186,35 @@ void Galois16Mul::setupMethod(Galois16Methods _method) {
 			SET_FOR_OPENCL(copy_cksum_check, gf16_cksum_copy_check_sse2);
 			SET_FOR_OPENCL(finish_grp2_cksum, gf16_grp2_finish_sse2);
 			SET_FOR_INVERT(replace_word, gf16_affine2x_replace_word);
+		break;
+		
+		case GF16_AFFINE_BMM:
+			scratch = gf16_affine_init_bmm(GF16_POLYNOMIAL);
+			METHOD_REQUIRES(gf16_affine_available_bmm, 1)
+			SET_FOR_INVERT(_mul, gf16_affine_mul_bmm);
+			_mul_add = &gf16_affine_muladd_bmm;
+			_mul_add_pf = &gf16_affine_muladd_prefetch_bmm;
+			SET_BASIC_OP(add_multi, gf_add_multi_avx512);
+			SET_FOR_INVERT(_mul_add_multi, gf16_affine_muladd_multi_bmm);
+			SET_FOR_INVERT(_mul_add_multi_stridepf, gf16_affine_muladd_multi_stridepf_bmm);
+			_mul_add_multi_packed = &gf16_affine_muladd_multi_packed_bmm;
+			_mul_add_multi_packpf = &gf16_affine_muladd_multi_packpf_bmm;
+			#ifdef PLATFORM_AMD64
+			SET_BASIC_OP(add_multi_packed, gf_add_multi_packed_v1i12_avx512);
+			add_multi_packpf = &gf_add_multi_packpf_v1i12_avx512;
+			#else
+			SET_BASIC_OP(add_multi_packed, gf_add_multi_packed_v1i6_avx512);
+			add_multi_packpf = &gf_add_multi_packpf_v1i6_avx512;
+			#endif
+			SET_BASIC_OP(prepare_packed, gf16_affine_prepare_packed_bmm);
+			prepare_packed_cksum = &gf16_affine_prepare_packed_cksum_bmm;
+			prepare_partial_packsum = &gf16_affine_prepare_partial_packsum_bmm;
+			SET_BASIC_OP(finish_packed, gf16_affine_finish_packed_bmm);
+			finish_packed_cksum = &gf16_affine_finish_packed_cksum_bmm;
+			finish_partial_packsum = &gf16_affine_finish_partial_packsum_bmm;
+			SET_FOR_OPENCL(copy_cksum, gf16_cksum_copy_avx512);
+			SET_FOR_OPENCL(copy_cksum_check, gf16_cksum_copy_check_avx512);
+			SET_FOR_OPENCL(finish_grp2_cksum, gf16_grp2_finish_avx512);
 		break;
 		
 		case GF16_XOR_JIT_AVX512:
@@ -1551,8 +1507,6 @@ Galois16Methods Galois16Mul::default_method(size_t regionSizeHint, unsigned inpu
 	if(caps.hasGFNI) {
 		if(gf16_affine_available_avx512 && caps.hasAVX512VLBW)
 			return GF16_AFFINE_AVX512;
-		if(gf16_affine_available_avx10 && caps.hasAVX10)
-			return GF16_AFFINE_AVX10;
 		if(gf16_affine_available_avx2 && caps.hasAVX2)
 			return GF16_AFFINE_AVX2;
 	}
@@ -1669,6 +1623,9 @@ std::vector<Galois16Methods> Galois16Mul::availableMethods(bool checkCpuid) {
 		ret.push_back(GF16_SHUFFLE_VBMI);
 	}
 	
+	if(gf16_affine_available_bmm && caps.hasBMM)
+		ret.push_back(GF16_AFFINE_BMM);
+	
 	if(caps.hasGFNI) {
 		if(gf16_affine_available_gfni && gf16_shuffle_available_ssse3 && caps.hasSSSE3) {
 			ret.push_back(GF16_AFFINE_GFNI);
@@ -1686,12 +1643,6 @@ std::vector<Galois16Methods> Galois16Mul::availableMethods(bool checkCpuid) {
 			ret.push_back(GF16_AFFINE_AVX512);
 			#if !defined(PARPAR_SLIM_GF16)
 			ret.push_back(GF16_AFFINE2X_AVX512);
-			#endif
-		}
-		if(gf16_affine_available_avx10 && gf16_shuffle_available_avx2 && (caps.hasAVX10 || caps.hasAVX512VBMI)) {
-			ret.push_back(GF16_AFFINE_AVX10);
-			#if !defined(PARPAR_SLIM_GF16)
-			ret.push_back(GF16_AFFINE2X_AVX10);
 			#endif
 		}
 	}

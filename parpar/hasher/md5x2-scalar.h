@@ -20,6 +20,14 @@ static HEDLEY_ALWAYS_INLINE void md5_init_lane_x2_scalar(void* state, const int 
 	state_[2 + idx*4] = 0x98badcfeL;
 	state_[3 + idx*4] = 0x10325476L;
 }
+static HEDLEY_ALWAYS_INLINE void md5_init_x2_scalar(void* state) {
+	md5_init_lane_x2_scalar(state, 0);
+	md5_init_lane_x2_scalar(state, 1);
+}
+static HEDLEY_ALWAYS_INLINE void md5_set_file_x2_scalar(void* state, void* fileState) {
+	md5_init_lane_x2_scalar(state, 0);
+	memcpy((uint32_t*)state + 4, fileState, 16);
+}
 
 #include "md5-scalar-base.h"
 

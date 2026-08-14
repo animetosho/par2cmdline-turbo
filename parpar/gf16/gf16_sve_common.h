@@ -31,22 +31,29 @@ static HEDLEY_ALWAYS_INLINE void gf16_prepare_half_block_sve(void *HEDLEY_RESTRI
 }
 // final block
 static HEDLEY_ALWAYS_INLINE void gf16_prepare_blocku_sve(void *HEDLEY_RESTRICT dst, const void *HEDLEY_RESTRICT src, size_t remaining) {
-	svst1_u8(svptrue_b8(), dst, svld1_u8(svwhilelt_b8((uint64_t)0, (uint64_t)remaining), src));
-	svst1_vnum_u8(svptrue_b8(), dst, 1, svld1_vnum_u8(svwhilelt_b8((uint64_t)svcntb(), (uint64_t)remaining), src, 1));
+	svst1_u8(svptrue_b8(), dst, svld1_u8(svwhilelt_b8_u64(0, remaining), src));
+	svst1_vnum_u8(svptrue_b8(), dst, 1, svld1_vnum_u8(svwhilelt_b8_u64(svcntb(), remaining), src, 1));
 }
 static HEDLEY_ALWAYS_INLINE void gf16_prepare_half_blocku_sve(void *HEDLEY_RESTRICT dst, const void *HEDLEY_RESTRICT src, size_t remaining) {
-	svst1_u8(svptrue_b8(), dst, svld1_u8(svwhilelt_b8((uint64_t)0, (uint64_t)remaining), src));
+	svst1_u8(svptrue_b8(), dst, svld1_u8(svwhilelt_b8_u64(0, remaining), src));
 }
 static HEDLEY_ALWAYS_INLINE void gf16_finish_blocku_sve(void *HEDLEY_RESTRICT dst, const void *HEDLEY_RESTRICT src, size_t remaining) {
-	svst1_u8(svwhilelt_b8((uint64_t)0, (uint64_t)remaining), dst, svld1_u8(svptrue_b8(), src));
-	svst1_vnum_u8(svwhilelt_b8((uint64_t)svcntb(), (uint64_t)remaining), dst, 1, svld1_vnum_u8(svptrue_b8(), src, 1));
+	svst1_u8(svwhilelt_b8_u64(0, remaining), dst, svld1_u8(svptrue_b8(), src));
+	svst1_vnum_u8(svwhilelt_b8_u64(svcntb(), remaining), dst, 1, svld1_vnum_u8(svptrue_b8(), src, 1));
 }
 static HEDLEY_ALWAYS_INLINE void gf16_finish_half_blocku_sve(void *HEDLEY_RESTRICT dst, const void *HEDLEY_RESTRICT src, size_t remaining) {
-	svst1_u8(svwhilelt_b8((uint64_t)0, (uint64_t)remaining), dst, svld1_u8(svptrue_b8(), src));
+	svst1_u8(svwhilelt_b8_u64(0, remaining), dst, svld1_u8(svptrue_b8(), src));
 }
 
+#if defined(_MSC_VER) && !defined(__clang__)
+# include <malloc.h>
+#endif
 static HEDLEY_ALWAYS_INLINE void gf16_checksum_prepare_sve(void *HEDLEY_RESTRICT dst, void *HEDLEY_RESTRICT checksum, const size_t blockLen, gf16_transform_block_rst prepareBlock) {
+#if defined(_MSC_VER) && !defined(__clang__)
+	int16_t* tmp = (int16_t*)_alloca(blockLen);
+#else
 	ALIGN_TO(16, int16_t tmp[blockLen/2]);
+#endif
 	memset(tmp, 0, blockLen);
 	svst1_s16(svptrue_b16(), tmp, *(svint16_t*)checksum);
 	

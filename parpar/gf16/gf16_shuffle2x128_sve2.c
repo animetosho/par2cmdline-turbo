@@ -7,7 +7,7 @@
 
 // emulate svzip1q_u8 without FP64MatMul feature
 static HEDLEY_ALWAYS_INLINE svuint8_t join_lane(svuint8_t a, svuint8_t b, int lane) {
-	const svuint64_t tbl2base = svorr_n_u64_m(
+	svuint64_t tbl2base = svorr_n_u64_m(
 		svnot_b_z(svptrue_b64(), svptrue_pat_b64(SV_VL2)),
 		svdupq_n_u64(0, 1),
 		svcntd()
@@ -52,7 +52,7 @@ static HEDLEY_ALWAYS_INLINE void gf16_shuffle2x128_sve2_calc_tables(const unsign
 	svuint8_t* tbl_Eln, svuint8_t* tbl_Els, svuint8_t* tbl_Ehn, svuint8_t* tbl_Ehs,
 	svuint8_t* tbl_Fln, svuint8_t* tbl_Fls, svuint8_t* tbl_Fhn, svuint8_t* tbl_Fhs
 ) {
-	svint16_t val1 = svld1_s16(svwhilelt_b16((uint32_t)0, (uint32_t)srcCount), (int16_t*)coefficients);
+	svint16_t val1 = svld1_s16(svwhilelt_b16_u32(0, srcCount), (int16_t*)coefficients);
 	svint16_t val2 = gf16_vec_mul2_sve(val1);
 	svint16_t val4 = gf16_vec_mul2_sve(val2);
 	svint16_t val8 = gf16_vec_mul2_sve(val4);
@@ -198,10 +198,10 @@ static HEDLEY_ALWAYS_INLINE void gf16_shuffle2x128_sve2_round(svuint8_t data, sv
 
 static HEDLEY_ALWAYS_INLINE void gf16_shuffle2x_muladd_x_sve2(
 	const void *HEDLEY_RESTRICT scratch,
-	uint8_t *HEDLEY_RESTRICT _dst, const unsigned srcScale, GF16_MULADD_MULTI_SRCLIST, size_t len,
+	GF16_BLKMAC_SRCDSTLIST, size_t len,
 	const uint16_t *HEDLEY_RESTRICT coefficients, const int doPrefetch, const char* _pf
 ) {
-	GF16_MULADD_MULTI_SRC_UNUSED(6);
+	GF16_BLKMAC_SRCDST_UNUSED(6, 1);
 	UNUSED(scratch);
 	
 	svuint8_t tbl_Aln, tbl_Als, tbl_Ahn, tbl_Ahs;
@@ -227,7 +227,7 @@ static HEDLEY_ALWAYS_INLINE void gf16_shuffle2x_muladd_x_sve2(
 		if(doPrefetch == 2)
 			svprfb(svptrue_b8(), _pf+ptr, SV_PLDL2KEEP);
 		
-		rn = svld1_u8(svptrue_b8(), _dst+ptr);
+		rn = svld1_u8(svptrue_b8(), _dst1+ptr*dstScale);
 		gf16_shuffle2x128_sve2_round1(svld1_u8(svptrue_b8(), _src1+ptr*srcScale), &rn, &rs1, &rs2, tbl_Aln, tbl_Als, tbl_Ahn, tbl_Ahs);
 		if(srcCount > 1)
 			gf16_shuffle2x128_sve2_round(svld1_u8(svptrue_b8(), _src2+ptr*srcScale), &rn, &rs1, &rs2, tbl_Bln, tbl_Bls, tbl_Bhn, tbl_Bhs);
@@ -245,7 +245,7 @@ static HEDLEY_ALWAYS_INLINE void gf16_shuffle2x_muladd_x_sve2(
 			8
 		));
 		rn = NOMASK(sveor_u8, rn, rs1);
-		svst1_u8(svptrue_b8(), _dst+ptr, rn);
+		svst1_u8(svptrue_b8(), _dst1+ptr*dstScale, rn);
 	}
 }
 #endif /*defined(__ARM_FEATURE_SVE2) && !defined(PARPAR_SLIM_GF16)*/

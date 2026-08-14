@@ -124,11 +124,11 @@
       <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|Win32'">-mssse3 -mgfni %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|x64'">-mssse3 -mgfni %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="gf16\gf16_affine_avx10.c">
-      <EnableEnhancedInstructionSet Condition="'$(Platform)'=='Win32'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Platform)'=='x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|Win32'">-mavx512bw -mavx512vl -mgfni -mno-evex512 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|x64'">-mavx512bw -mavx512vl -mgfni -mno-evex512 %(AdditionalOptions)</AdditionalOptions>
+    <ClCompile Include="gf16\gf16_affine_bmm.c">
+      <EnableEnhancedInstructionSet Condition="'$(Platform)'=='Win32'">AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Platform)'=='x64'">AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|Win32'">-mavx512vl -mavx512bmm %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|x64'">-mavx512vl -mavx512bmm %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="gf16\gf16_lookup.c" />
     <ClCompile Include="gf16\gf16_lookup_sse2.c">
@@ -210,12 +210,6 @@
       <EnableEnhancedInstructionSet Condition="'$(Platform)'=='x64'">AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
       <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|Win32'">-mavx512bw -mavx512vl %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|x64'">-mavx512bw -mavx512vl %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="gf16\gf_add_avx10.c">
-      <EnableEnhancedInstructionSet Condition="'$(Platform)'=='Win32'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Platform)'=='x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|Win32'">-mavx512bw -mavx512vl -mno-evex512 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|x64'">-mavx512bw -mavx512vl -mno-evex512 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="gf16\gf_add_neon.c">
       <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|ARM'">-mfpu=neon %(AdditionalOptions)</AdditionalOptions>

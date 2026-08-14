@@ -9,13 +9,13 @@ static HEDLEY_ALWAYS_INLINE void gf16_clmul_sve2_round(const void* src, svuint8_
 	svuint8_t swapCoeff = svreinterpret_u8_u16(NOMASK(svrevb_u16, svreinterpret_u16_u8(coeff)));
 	svuint8_t midCoeff = NOMASK(sveor_u8, coeff, swapCoeff);
 	
-	*low1 = svpmullb_pair_u8(svget2(data, 0), coeff);
-	*low2 = svpmullt_pair_u8(svget2(data, 0), swapCoeff);
-	svuint8_t mid = NOMASK(sveor_u8, svget2(data, 0), svget2(data, 1));
+	*low1 = svpmullb_pair_u8(svget2_u8(data, 0), coeff);
+	*low2 = svpmullt_pair_u8(svget2_u8(data, 0), swapCoeff);
+	svuint8_t mid = NOMASK(sveor_u8, svget2_u8(data, 0), svget2_u8(data, 1));
 	*mid1 = svpmullb_pair_u8(mid, midCoeff);
 	*mid2 = svpmullt_pair_u8(mid, midCoeff);
-	*high1 = svpmullb_pair_u8(svget2(data, 1), swapCoeff);
-	*high2 = svpmullt_pair_u8(svget2(data, 1), coeff);
+	*high1 = svpmullb_pair_u8(svget2_u8(data, 1), swapCoeff);
+	*high2 = svpmullt_pair_u8(svget2_u8(data, 1), coeff);
 }
 
 static HEDLEY_ALWAYS_INLINE void gf16_clmul_sve2_merge1(
@@ -46,10 +46,10 @@ static HEDLEY_ALWAYS_INLINE void gf16_clmul_sve2_merge2(
 
 static HEDLEY_ALWAYS_INLINE void gf16_clmul_muladd_x_sve2(
 	const void *HEDLEY_RESTRICT scratch,
-	uint8_t *HEDLEY_RESTRICT _dst, const unsigned srcScale, GF16_MULADD_MULTI_SRCLIST, size_t len,
+	GF16_BLKMAC_SRCDSTLIST, size_t len,
 	const uint16_t *HEDLEY_RESTRICT coefficients, const int doPrefetch, const char* _pf
 ) {
-	GF16_MULADD_MULTI_SRC_UNUSED(CLMUL_NUM_REGIONS);
+	GF16_BLKMAC_SRCDST_UNUSED(CLMUL_NUM_REGIONS, 1);
 	UNUSED(scratch);
 	
 	svuint8_t coeff0, coeff1, coeff2, coeff3, coeff4, coeff5, coeff6, coeff7;
@@ -102,10 +102,10 @@ static HEDLEY_ALWAYS_INLINE void gf16_clmul_muladd_x_sve2(
 		} \
 		gf16_clmul_sve2_reduction(&low1a, &low2a, mid1a, mid2a, &high1a, &high2a); \
 		 \
-		svuint8x2_t vb = svld2_u8(svptrue_b8(), _dst+ptr); \
-		low1a = sveor3_u8(low1a, low2a, svget2(vb, 0)); \
-		high1a = sveor3_u8(high1a, high2a, svget2(vb, 1)); \
-		svst2_u8(svptrue_b8(), _dst+ptr, svcreate2_u8(low1a, high1a))
+		svuint8x2_t vb = svld2_u8(svptrue_b8(), _dst1+ptr*dstScale); \
+		low1a = sveor3_u8(low1a, low2a, svget2_u8(vb, 0)); \
+		high1a = sveor3_u8(high1a, high2a, svget2_u8(vb, 1)); \
+		svst2_u8(svptrue_b8(), _dst1+ptr*dstScale, svcreate2_u8(low1a, high1a))
 	
 	if(doPrefetch) {
 		for(intptr_t ptr = -(intptr_t)len; ptr; ptr += svcntb()*2) {

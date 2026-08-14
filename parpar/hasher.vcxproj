@@ -138,8 +138,8 @@
     <ClCompile Include="hasher\hasher_avx512vl.cpp">
       <EnableEnhancedInstructionSet Condition="'$(Platform)'=='Win32'">AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Platform)'=='x64'">AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
-      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|Win32'">-mavx512vl -mavx512bw -mbmi2 -mpclmul -mno-evex512 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|x64'">-mavx512vl -mavx512bw -mbmi2 -mpclmul -mno-evex512 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|Win32'">-mavx512vl -mavx512bw -mbmi2 -mpclmul %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|x64'">-mavx512vl -mavx512bw -mbmi2 -mpclmul %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="hasher\hasher_armcrc.cpp">
       <AdditionalOptions Condition="'$(PlatformToolset)|$(Platform)'=='ClangCL|ARM'">-march=armv8-a+crc %(AdditionalOptions)</AdditionalOptions>
