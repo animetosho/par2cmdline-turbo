@@ -152,7 +152,8 @@ libparpar_gf16_gfni_avx2_a_SOURCES = \
 libparpar_gf16_gfni_avx2_a_CFLAGS = $(CFLAGS_GFNI) $(CFLAGS_AVX2) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_gfni_avx512_a_SOURCES = \
-	parpar/gf16/gf16_affine_avx512.c
+	parpar/gf16/gf16_affine_avx512.c \
+	parpar/gf16/gf16_affine_avx10.h
 libparpar_gf16_gfni_avx512_a_CFLAGS = $(CFLAGS_GFNI) $(CFLAGS_AVX512) $(libparpar_gf16_a_CFLAGS)
 
 libparpar_gf16_bmm_a_SOURCES = \
