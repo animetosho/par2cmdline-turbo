@@ -329,6 +329,10 @@ LDADD = -lstdc++ $(PTHREAD_LIBS) $(LDFLAGS_LIBATOMIC)
 AM_CPPFLAGS = -Wall -DNDEBUG -DPARPAR_ENABLE_HASHER_MD5CRC -DPARPAR_INVERT_SUPPORT -DPARPAR_SLIM_GF16
 AM_CXXFLAGS = -std=c++14 $(PTHREAD_CFLAGS)
 
+if MINGW
+par2_LDFLAGS = -municode
+endif
+
 EXTRA_DIST = \
 	man/par2.1 \
 	automake.sh \
@@ -479,7 +483,6 @@ tests_reedsolomon_test_SOURCES = src/reedsolomon_test.cpp src/reedsolomon.cpp sr
 tests_galois_test_SOURCES = src/galois_test.cpp src/galois.cpp src/galois.h
 
 tests_utf8_test_SOURCES = src/utf8_test.cpp src/utf8.cpp src/utf8.h
-
 
 # List of all tests.
 # tests/test* are integration tests that use the binary.
