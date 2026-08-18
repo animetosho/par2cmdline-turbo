@@ -25,7 +25,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.62)
 AC_INIT([par2cmdline-turbo], [1.4.0])
 AC_DEFINE([BASE_PACKAGE], ["par2cmdline"], [Upstream package name])
-AC_DEFINE([BASE_VERSION], ["1.2.0"], [Upstream package version])
+AC_DEFINE([BASE_VERSION], ["1.3.0"], [Upstream package version])
 
 AC_CONFIG_SRCDIR([src/par2cmdline.cpp])
 

@@ -11,7 +11,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;BASE_PACKAGE="par2cmdline";BASE_VERSION="1.2.0";PACKAGE="par2cmdline-turbo";VERSION="1.4.0";PARPAR_ENABLE_HASHER_MD5CRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;BASE_PACKAGE="par2cmdline";BASE_VERSION="1.3.0";PACKAGE="par2cmdline-turbo";VERSION="1.4.0";PARPAR_ENABLE_HASHER_MD5CRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -31,7 +31,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;BASE_PACKAGE="par2cmdline";BASE_VERSION="1.2.0";PACKAGE="par2cmdline-turbo";VERSION="1.4.0";PARPAR_ENABLE_HASHER_MD5CRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;BASE_PACKAGE="par2cmdline";BASE_VERSION="1.3.0";PACKAGE="par2cmdline-turbo";VERSION="1.4.0";PARPAR_ENABLE_HASHER_MD5CRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
