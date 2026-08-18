@@ -226,9 +226,9 @@ jobs:
       env:
         LDFLAGS: -static -s
         run: |
-        SYSROOT="$PWD/sysroot"
+          SYSROOT="$PWD/sysroot"
           ./automake.sh
-        ./configure --host=${{ matrix.triple }} \
+          ./configure --host=${{ matrix.triple }} \
           CC="clang --target=${{ matrix.triple }} --sysroot=$SYSROOT -fuse-ld=lld" \
           CXX="clang++ --target=${{ matrix.triple }} --sysroot=$SYSROOT -stdlib=libc++ -fuse-ld=lld"
           make -j"$(nproc)"
